@@ -121,7 +121,7 @@ int Renderer::render(int samples, int bounces)
     // being used for the rest of the render, which is wastefull, a better solution
     // would be to queue the work in smaller parts and feed the threads like that
     // but this will do for now. 
-    std::thread threads[m_thread_amount];
+    std::thread *threads = new std::thread[m_thread_amount];
     for (int i = 0; i < m_thread_amount; i++)
     {
         threads[i] = std::thread(&Renderer::renderThread, this, i, percentages);
@@ -139,6 +139,7 @@ int Renderer::render(int samples, int bounces)
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop_chrono - start_chrono);
     DEBUG("Rendering done, took: " << (double) duration.count() / 1000 << " seconds");
 
+    delete[] threads;
     return 0;
 }
 
