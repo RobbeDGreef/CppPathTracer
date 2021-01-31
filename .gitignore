@@ -1,0 +1,9 @@
+.vscode
+saved
+build
+
+*.ppm
+*.bmp
+
+raytracer*
+perf*
