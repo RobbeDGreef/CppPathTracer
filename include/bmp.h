@@ -14,14 +14,16 @@
 #define BMP_DIB_COMPRESSION_TYPE    0
 #define BMP_DIB_COMPRESSION_SIZE    0
 
+PACKED(
 struct bmp_hdr
 {
     char        id[2];
     uint32_t    size;                   // Size of the file in bytes
     uint16_t    reserved[2];
     uint32_t    image_data_offset;
-}__attribute__((packed));
+});
 
+PACKED(
 struct bmp_dib_hdr
 {
     uint32_t    size;                   // dib hdr size (should be 40)
@@ -35,6 +37,6 @@ struct bmp_dib_hdr
     uint32_t    y_ppm;                  // Vertical resolution (pixels per meter)
     uint32_t    used_colors_cnt;        // Amount of used colors
     uint32_t    important_colors_cnt;   // Amount of important colors;
-}__attribute__((packed));
+});
 
 int createBitmap(Color **color_array, std::string filename, int width, int height);
