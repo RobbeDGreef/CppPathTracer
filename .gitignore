@@ -1,6 +1,8 @@
-.vscode
-saved
-build
+.vscode/
+saved/
+build/
+out/
+.vs/
 
 *.ppm
 *.bmp
