@@ -23,7 +23,6 @@ private:
     BvhNode m_world;
 
 private:
-    void writeColor(Color);
     Color rayColor(const Ray& r, int bounces);
     void renderThread(int thread_idx, double *percentage);
     void calcProgress(double *percentages);
