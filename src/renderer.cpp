@@ -4,6 +4,7 @@
 #include <random.h>
 #include <materials/material.h>
 #include <chrono>
+#include <core.h>
 
 Renderer::Renderer(int width, int height, HitableList world, Camera cam)
                   : m_width(width), m_height(height), m_cam(cam), 
