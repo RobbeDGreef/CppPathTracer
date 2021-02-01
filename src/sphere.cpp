@@ -41,6 +41,7 @@ bool Sphere::hit(const Ray &ray, double t_min, double t_max, HitRecord &rec) con
     Direction outward_normal = (rec.p - center(t)) / radius(t);
     rec.set_face_normal(ray, outward_normal);
     rec.mat = material(t);
+    getUV(outward_normal, rec.u, rec.v);
     
     return true;
 }
@@ -52,4 +53,16 @@ bool Sphere::boundingBox(double t0, double t1, AABB &bounding_box) const
 
     bounding_box = AABB::surroundingBox(b0, b1);
     return true;
+}
+
+void Sphere::getUV(const Point3 &p, double &u, double &v)
+{
+    // phi = atan2(-z, x) + PI
+    // theta = acos(-y)
+    // u and v have to be [0, 1] so we will have to normalise them like:
+    // u = phi / 2pi
+    // v = theta / pi
+
+    u = (atan2(-p.z(), p.x()) + pi) / (2 * pi);
+    v = acos(-p.y()) / pi;
 }

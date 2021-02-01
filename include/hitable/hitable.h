@@ -15,6 +15,8 @@ public:
     double t;
     bool front_face;
     std::shared_ptr<Material> mat;
+    double u;
+    double v;
 
     inline void set_face_normal(const Ray &ray, const Direction outward_normal)
     {

@@ -11,6 +11,9 @@ protected:
     double m_radius = 0;
     std::shared_ptr<Material> m_mat;
 
+private:
+    static void getUV(const Point3 &p, double &u, double &v);
+
 protected:
     virtual Point3 center(double t) const { return m_center; }
     virtual double radius(double t) const { return m_radius; }
