@@ -7,25 +7,13 @@
 #include <core.h>
 
 Renderer::Renderer(int width, int height, HitableList world, Camera cam)
-                  : m_width(width), m_height(height), m_cam(cam), 
+                  : m_cam(cam), m_screen_buf(width, height),
                     m_world(world, cam.shutterStart(), cam.shutterEnd())
 {
-    m_screen_buf = new Color*[width];
-
-    for (int i = 0; i < width; ++i)
-    {
-        m_screen_buf[i] = new Color[height];
+    m_width = width;
+    m_height = height;
     }
-}
 
-Renderer::~Renderer()
-{
-    for (int i = 0; i < m_width; ++i)
-    {
-        delete[] m_screen_buf[i];
-    }
-    delete[] m_screen_buf;
-}
 
 static Point3 randomInHemisphere(const Direction normal)
 {

@@ -44,9 +44,9 @@ int createBitmap(Color **color_array, std::string filename, int width, int heigh
         for (int i = 0; i < width; i++)
         {
             Color &color = color_array[i][j];
-            output.put((char) (255.999 * color[2]));
-            output.put((char) (255.999 * color[1]));
-            output.put((char) (255.999 * color[0]));
+            output.put(static_cast<char>(255.999 * color[2]));
+            output.put(static_cast<char>(255.999 * color[1]));
+            output.put(static_cast<char>(255.999 * color[0]));
         }
     }
 

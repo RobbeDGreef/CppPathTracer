@@ -5,6 +5,8 @@
 #include <camera.h>
 #include <ray.h>
 
+#include <color_array.h>
+
 #include <hitable/hitable_list.h>
 #include <bvh/bvh.h>
 
@@ -17,7 +19,7 @@ private:
     int m_max_bounces;
     int m_thread_amount = 8;
 
-    Color **m_screen_buf = nullptr;
+    ColorArray m_screen_buf;
 
     Camera m_cam;
     BvhNode m_world;
@@ -29,7 +31,6 @@ private:
 
 public:
     Renderer(int width, int height, HitableList world, Camera cam);
-    ~Renderer();
     int render(int samples=100, int max_bounces=12);
 
     int writeToFile(std::string file);

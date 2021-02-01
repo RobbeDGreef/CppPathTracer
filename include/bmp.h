@@ -2,6 +2,7 @@
 
 #include <core.h>
 #include <vec3.h>
+#include <color_array.h>
 
 #include <stdint.h>
 
