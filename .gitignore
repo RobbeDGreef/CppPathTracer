@@ -3,6 +3,7 @@ saved/
 build/
 out/
 .vs/
+development/
 
 *.ppm
 *.bmp
