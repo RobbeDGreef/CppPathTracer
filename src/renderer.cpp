@@ -12,7 +12,7 @@ Renderer::Renderer(int width, int height, HitableList world, Camera cam)
 {
     m_width = width;
     m_height = height;
-    }
+}
 
 
 static Point3 randomInHemisphere(const Direction normal)
@@ -133,7 +133,7 @@ int Renderer::render(int samples, int bounces)
 
 int Renderer::writeToFile(std::string file)
 {
-    return createBitmap(m_screen_buf, file, m_width, m_height);
+    return Bmp::write(m_screen_buf, file, m_width, m_height);
 
 #if 0
     // PPM file format:  

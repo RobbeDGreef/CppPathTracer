@@ -40,4 +40,9 @@ struct bmp_dib_hdr
     uint32_t    important_colors_cnt;   // Amount of important colors;
 });
 
-int createBitmap(Color **color_array, std::string filename, int width, int height);
+class Bmp
+{
+public:
+    static int write(ColorArray &color_array, std::string filename, int width, int height);
+    static std::shared_ptr<ColorArray> read(std::string filename);
+};

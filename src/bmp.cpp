@@ -1,6 +1,9 @@
 #include <bmp.h>
 
-int createBitmap(Color **color_array, std::string filename, int width, int height)
+// This code is a little ugly and pretty c style ish but 
+// it will do for now.
+
+int Bmp::write(ColorArray &color_array, std::string filename, int width, int height)
 {
     std::ofstream output;
     output.open(filename, std::ios::out| std::ios::binary);
