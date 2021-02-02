@@ -15,9 +15,7 @@ int Bmp::write(ColorArray &color_array, std::string filename, int width, int hei
     struct bmp_hdr header;
     header.id[0] = BMP_HDR_ID_0;
     header.id[1] = BMP_HDR_ID_1;
-    header.size = sizeof(struct bmp_hdr) +                  // Header 1
-                  sizeof(struct bmp_dib_hdr) +              // Header 2
-                  width * height * (BMP_DIB_BBP / 8);       // The pixel data
+    header.size = 0; // This will be set at the end.
     
     DEBUG("size: " << header.size);
     
@@ -41,7 +39,7 @@ int Bmp::write(ColorArray &color_array, std::string filename, int width, int hei
     dib.important_colors_cnt = 0;
 
     output.write((const char *) &dib, sizeof(struct bmp_dib_hdr));
-    
+
     for (int j = 0; j < height; j++)
     {
         for (int i = 0; i < width; i++)
@@ -51,7 +49,15 @@ int Bmp::write(ColorArray &color_array, std::string filename, int width, int hei
             output.put(static_cast<char>(255.999 * color[1]));
             output.put(static_cast<char>(255.999 * color[0]));
         }
+
+        // Every row in the pixel array has to be padded to 4 bytes.
+        if (width % 4)
+            output.seekp(4 - (width % 4), std::ios::end);
     }
+
+    int size = output.tellp();
+    output.seekp(2, std::ios::beg);
+    output.write((const char *) &size, 4);
 
     return 0;
 }
@@ -71,28 +77,35 @@ std::shared_ptr<ColorArray> Bmp::read(std::string filename)
 
     if (header.id[0] != BMP_HDR_ID_0 && header.id[1] != BMP_HDR_ID_1)
         READ_ERR("Could not read '" << filename << "' because it is not a valid BMP image");
-    
 
     struct bmp_dib_hdr dib_header;
     input.read((char*) &dib_header, sizeof(struct bmp_dib_hdr));
 
     if (dib_header.compression_type != 0)
-        READ_ERR("Could not read '" << filename << "' because the BMP image is compressed");
+        READ_ERR("Could not read '" << filename << "' because the BMP image is compressed (" << dib_header.compression_type << ")");
 
-    if (dib_header.bbp != 0)
-        READ_ERR("Could not read '" << filename << "' because the BMP image is not 24 bit");
+    int width = dib_header.image_width;
+    int height = dib_header.image_height;
+    int bpp = dib_header.bpp / 8;
+    auto array = std::make_shared<ColorArray>(width, height);
 
-    auto array = std::make_shared<ColorArray>(dib_header.image_width, dib_header.image_width);
-    
-    int image_data_size = (dib_header.bbp / 8) * dib_header.image_width * dib_header.image_height;
-    for (int j = 0; j < dib_header.image_height; j++)
+    input.seekg(header.image_data_offset, std::ios::beg);
+
+    int image_data_size = bpp * width * height;
+    for (int j = 0; j < height; j++)
     {
-        for (int i = 0; i < dib_header.image_width; i++)
+        for (int i = 0; i < width; i++)
         {
-            char data[4];
-            input.read(data, dib_header.bbp / 8);
-            array->at(i)[j] = Color((double) data[0] / 255, (double) data[1] / 255, (double) data[2] / 255);
+            uint8_t data[4];
+            input.read((char*) data, bpp);
+            array->at(i)[j] = Color((double) data[2] / 255, (double) data[1] / 255, (double) data[0] / 255);
         }
+
+        // Every row in the pixel array has to be padded to be a multiple of 4 bytes. 
+        // meaning we have to account for this gap.
+        if (width % 4)
+            input.seekg(4 - (width % 4), std::ios::cur);
+
     }
 
     return array;
