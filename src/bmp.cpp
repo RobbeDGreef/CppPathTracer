@@ -32,7 +32,7 @@ int Bmp::write(ColorArray &color_array, std::string filename, int width, int hei
     dib.image_width = width;
     dib.image_height = height;
     dib.planes_cnt = BMP_DIB_PLANES;
-    dib.bbp = BMP_DIB_BBP;
+    dib.bpp = BMP_DIB_BBP;
     dib.compression_type = BMP_DIB_COMPRESSION_TYPE;
     dib.compressed_size = 0;
     dib.x_ppm = 0;

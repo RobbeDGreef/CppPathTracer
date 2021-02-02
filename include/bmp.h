@@ -31,7 +31,7 @@ struct bmp_dib_hdr
     uint32_t    image_width;
     uint32_t    image_height;
     uint16_t    planes_cnt;             // Should be 1
-    uint16_t    bbp;                    // Bits per pixel
+    uint16_t    bpp;                    // Bits per pixel
     uint32_t    compression_type;       // 0 for no compression
     uint32_t    compressed_size;        // 0 when no compression 
     uint32_t    x_ppm;                  // Horizontal resolution (pixels per meter)
