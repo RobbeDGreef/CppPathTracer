@@ -1,8 +1,8 @@
 #include <random.h>
 #include <vec3.h>
+#include <core.h>
 
-// Easily the fastest of the two
-#if 1
+#if 0
 double randomDouble()
 {
     static std::uniform_real_distribution<double> distribution(0.0, 1.0);
@@ -11,10 +11,38 @@ double randomDouble()
 }
 #endif
 
-#if 0
+#if 1
 double randomDouble()
 {
-    return rand() / (RAND_MAX + 1.0);
+    // Xoroshiro128+
+    static uint64_t shuffle[2] = {123456789, 987654321};
+    uint64_t s1 = shuffle[0];
+    uint64_t s0 = shuffle[1];
+    register uint64_t res = s0 + s1;
+    shuffle[0] = s0;
+    s1 ^= s1 << 23;
+    shuffle[1] = s1 ^ s0 ^ (s1 >> 18) ^ (s0 >> 5);
+    return (double) res / UINT64_MAX;
+}
+#endif
+
+
+#if 0
+// 0.947 - 0.967
+double randomDouble()
+{
+    static uint64_t x=123456789, y=362436069, z=521288629;
+    register unsigned long t;
+    x ^= x << 16;
+    x ^= x >> 5;
+    x ^= x << 1;
+
+    t = x;
+    x = y;
+    y = z;
+    z = t ^ x ^ y;
+
+    return (double) z / UINT64_MAX;
 }
 #endif
 

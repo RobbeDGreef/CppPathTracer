@@ -4,6 +4,7 @@ build/
 out/
 .vs/
 development/
+test/
 
 *.ppm
 *.bmp
