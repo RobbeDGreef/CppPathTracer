@@ -7,7 +7,7 @@
 
 #include <color_array.h>
 
-#include <hitable/hitable_list.h>
+#include <hitables/hitable_list.h>
 #include <bvh/bvh.h>
 
 class Renderer

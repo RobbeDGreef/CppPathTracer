@@ -1,10 +1,10 @@
 #include <core.h>
 #include <renderer.h>
 
-#include <hitable/hitable_list.h>
-#include <hitable/sphere.h>
-#include <hitable/moving_sphere.h>
-#include <hitable/triangle.h>
+#include <hitables/hitable_list.h>
+#include <hitables/sphere.h>
+#include <hitables/moving_sphere.h>
+#include <hitables/triangle.h>
 
 #include <materials/lambertian.h>
 #include <materials/dielectric.h>

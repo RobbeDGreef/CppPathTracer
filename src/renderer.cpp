@@ -1,6 +1,6 @@
 #include <renderer.h>
 #include <bmp.h>
-#include <hitable/hitable.h>
+#include <hitables/hitable.h>
 #include <random.h>
 #include <materials/material.h>
 #include <chrono>

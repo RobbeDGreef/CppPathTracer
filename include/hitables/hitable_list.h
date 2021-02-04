@@ -1,6 +1,6 @@
 #pragma once
 
-#include <hitable/hitable.h>
+#include <hitables/hitable.h>
 #include <bvh/aabb.h>
 #include <core.h>
 

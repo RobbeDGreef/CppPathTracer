@@ -1,7 +1,7 @@
 #pragma once
 
 #include <materials/material.h>
-#include <hitable/hitable.h>
+#include <hitables/hitable.h>
 #include <textures/texture.h>
 
 class Lambertian : public Material

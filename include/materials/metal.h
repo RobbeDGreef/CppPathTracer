@@ -1,6 +1,6 @@
 #pragma once
 
-#include <hitable/hitable.h>
+#include <hitables/hitable.h>
 #include <materials/material.h>
 
 class Metal : public Material 

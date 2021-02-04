@@ -1,4 +1,4 @@
-#include <hitable/triangle.h>
+#include <hitables/triangle.h>
 
 void Triangle::getUV(const Point3 &p, double &u, double &v) const
 {

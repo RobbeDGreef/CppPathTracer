@@ -2,7 +2,7 @@
 
 #include <ray.h>
 #include <vec3.h>
-#include <hitable/hitable.h>
+#include <hitables/hitable.h>
 
 class Material
 {

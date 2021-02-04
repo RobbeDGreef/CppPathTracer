@@ -1,4 +1,4 @@
-#include <hitable/sphere.h>
+#include <hitables/sphere.h>
 
 bool Sphere::hit(const Ray &ray, double t_min, double t_max, HitRecord &rec) const
 {

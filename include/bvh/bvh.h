@@ -1,7 +1,7 @@
 #pragma once
 
-#include <hitable/hitable.h>
-#include <hitable/hitable_list.h>
+#include <hitables/hitable.h>
+#include <hitables/hitable_list.h>
 
 class BvhNode : public Hitable
 {

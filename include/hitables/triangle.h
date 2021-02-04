@@ -1,6 +1,6 @@
 #pragma once
 
-#include <hitable/hitable.h>
+#include <hitables/hitable.h>
 
 class Triangle : public Hitable
 {

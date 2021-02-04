@@ -1,7 +1,8 @@
-#include <hitable/hitable_list.h>
+#include <hitables/hitable_list.h>
 
 bool HitableList::hit(const Ray &ray, double t_min, double t_max, HitRecord &rec) const
 {
+    WARN("hit test");
     HitRecord tmp;
     bool hit_anything = false;
     double closest_so_far = t_max;

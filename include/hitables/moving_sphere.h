@@ -1,4 +1,4 @@
-#include <hitable/sphere.h>
+#include <hitables/sphere.h>
 
 class MovingSphere : public Sphere
 {
