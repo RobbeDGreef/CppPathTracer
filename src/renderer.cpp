@@ -35,10 +35,11 @@ Color Renderer::rayColor(const Ray &r, int bounces=0)
     {
         Ray scattered;
         Color attenuation;
+        Color emitted = rec.mat->emitted(rec.u, rec.v, rec.p);
         if (rec.mat->scatter(r, rec, attenuation, scattered))
-            return attenuation * rayColor(scattered, bounces+1);
+            return emitted + attenuation * rayColor(scattered, bounces+1);
         
-        return Color(0,0,0);
+        return emitted;
     }
     
     return m_background;
