@@ -6,12 +6,13 @@
 #include <chrono>
 #include <core.h>
 
-Renderer::Renderer(int width, int height, HitableList world, Camera cam)
+Renderer::Renderer(int width, int height, HitableList world, Camera cam, Color bg)
                   : m_cam(cam), m_screen_buf(width, height),
                     m_world(world, cam.shutterStart(), cam.shutterEnd())
 {
     m_width = width;
     m_height = height;
+    m_background = bg;
 }
 
 
@@ -40,9 +41,7 @@ Color Renderer::rayColor(const Ray &r, int bounces=0)
         return Color(0,0,0);
     }
     
-    Direction unit_dir = normalize(r.direction());
-    double t = 0.5*(unit_dir.y() + 1.0);
-    return (1.0 - t) * Color(1.0, 1.0, 1.0) + t*Color(0.5, 0.7, 1.0);
+    return m_background;
 }
 
 void Renderer::calcProgress(double *percentages)

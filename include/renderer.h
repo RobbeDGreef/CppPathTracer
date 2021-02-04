@@ -19,6 +19,8 @@ private:
     int m_max_bounces;
     int m_thread_amount = 8;
 
+    Color m_background;
+
     ColorArray m_screen_buf;
 
     Camera m_cam;
@@ -30,7 +32,7 @@ private:
     void calcProgress(double *percentages);
 
 public:
-    Renderer(int width, int height, HitableList world, Camera cam);
+    Renderer(int width, int height, HitableList world, Camera cam, Color bg=Color());
     int render(int samples=100, int max_bounces=12);
 
     int writeToFile(std::string file);
