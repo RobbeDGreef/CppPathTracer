@@ -4,16 +4,23 @@
 #include <hitable/hitable_list.h>
 #include <hitable/sphere.h>
 #include <hitable/moving_sphere.h>
+#include <hitable/triangle.h>
 
 #include <materials/lambertian.h>
 #include <materials/dielectric.h>
 #include <materials/metal.h>
+#include <materials/diffuse_light.h>
+
+#include <textures/texture.h>
+#include <textures/checker_texture.h>
+#include <textures/noise_texture.h>
+#include <textures/image_texture.h>
 
 HitableList genRandom()
 {
     HitableList world;
 
-    auto mat_ground = std::make_shared<Lambertian>(Color(.5,.5,.5));
+    auto mat_ground = std::make_shared<Lambertian>(std::make_shared<CheckerTexture>());
     world.add(std::make_shared<Sphere>(Point3(0,-1000, 0), 1000, mat_ground));
 
     # if 1
@@ -68,18 +75,58 @@ int main(int argc, char **argv)
 
     DEBUG("Rendering image of size: " << image_width << "x" << image_height);
     
+    
+#if 0
+    HitableList world = genRandom();
+#endif
+#if 0
     auto mat_ground = std::make_shared<Lambertian>(Color(0.8,0.8,0.0));
     auto mat_mid = std::make_shared<Dielectric>(1.5);
     auto mat_left = std::make_shared<Metal>(Color(0.8,0.6,0.2), 0.8);
     auto mat_right = std::make_shared<Metal>(Color(0.8,0.0,0.1), 0.2);
-    
-    HitableList world = genRandom();
-    //HitableList world;
-    //world.add(std::make_shared<Sphere>(Point3(0,0,-1), 0.5, mat_ground));
+    HitableList world;
+    world.add(std::make_shared<Sphere>(Point3(0,0,-1), 0.5, mat_ground));
+#endif
+#if 0
+    HitableList world;
+    auto checker = std::make_shared<CheckerTexture>(Color(0.1,0.1,0.1), Color(0.8,0.8,0.8), 10);
+    world.add(std::make_shared<Sphere>(Point3(0, -1, 0), 1, std::make_shared<Lambertian>(checker)));
+    world.add(std::make_shared<Sphere>(Point3(0, 1, 0), 1, std::make_shared<Lambertian>(checker)));
+#endif
+#if 0
+    HitableList world;
+    auto perlin = std::make_shared<NoiseTexture>();
+    world.add(std::make_shared<Sphere>(Point3(0, 0, 0), 1, std::make_shared<Lambertian>(perlin)));
+    world.add(std::make_shared<Sphere>(Point3(0, -101, 0), 100, std::make_shared<Lambertian>(perlin)));
+#endif
 
-    Camera cam(Point3(13,2,3), Point3(0,0,0), aspect_ratio, 20, 0.1, 10.0, 0, 1);
-    Renderer renderer(image_width, image_height, world, cam);
-    renderer.render(200);
+#if 0
+    HitableList world;
+    auto doge = std::make_shared<ImageTexture>("textures/earthmap.bmp");
+    //auto doge = std::make_shared<SolidColor>(Color(1,0,0));
+    world.add(std::make_shared<Sphere>(Point3(0, 0, 0), 1, std::make_shared<Lambertian>(doge)));
+    world.add(std::make_shared<Sphere>(Point3(0, -101, 0), 100, std::make_shared<Lambertian>(doge)));
+#endif
+
+#if 0
+    HitableList world;
+    auto doge = std::make_shared<ImageTexture>("textures/earthmap.bmp");
+    auto emis = std::make_shared<DiffuseLight>(Color(20,20,20));
+    //auto doge = std::make_shared<SolidColor>(Color(1,0,0));
+    world.add(std::make_shared<Sphere>(Point3(0, 0, 0), 1, std::make_shared<Lambertian>(doge)));
+    world.add(std::make_shared<Sphere>(Point3(0, -101, 0), 100, std::make_shared<Lambertian>(doge)));
+    world.add(std::make_shared<Sphere>(Point3(0,1,-1), 0.1, emis));
+#endif
+
+#if 1
+    HitableList world;
+    auto mat = std::make_shared<Lambertian>(Color(1,0,0));
+    world.add(std::make_shared<Triangle>(Point3(0,0,0), Point3(0.5,1,1), Point3(0.2,0,1), mat));    
+#endif
+
+    Camera cam(Point3(13,2,3), Point3(0,0,0), aspect_ratio, 20, 0.4, 10.0, 0, 1);
+    Renderer renderer(image_width, image_height, world, cam, Color(0.5, 0.55, 0.9));
+    renderer.render(300);
     renderer.writeToFile("test.bmp");
  
     return 0;
