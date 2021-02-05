@@ -11,7 +11,6 @@ private:
 
 protected:
     virtual std::shared_ptr<Material> material(double t) const { return m_mat; }
-    virtual void getUV(const Point3 &p, double &u, double &v) const;
 
 public:
     Triangle(Point3 x, Point3 y, Point3 z, std::shared_ptr<Material> mat) 

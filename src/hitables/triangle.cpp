@@ -1,11 +1,5 @@
 #include <hitables/triangle.h>
 
-void Triangle::getUV(const Point3 &p, double &u, double &v) const
-{
-    u = 0;
-    v = 0;
-}
-
 bool Triangle::hit(const Ray &r, double t_min, double t_max, HitRecord &rec) const 
 {
     // Möller-Trumbore intersection algorithm
