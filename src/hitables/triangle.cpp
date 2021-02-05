@@ -7,7 +7,7 @@ bool Triangle::hit(const Ray &r, double t_min, double t_max, HitRecord &rec) con
     const double epsilon = 0.0000001;
     // The UV coordinates
     double u, v;
-
+    
     Direction edge1 = m_points[1] - m_points[0];
     Direction edge2 = m_points[2] - m_points[0];
     Point3 pvec = cross(r.direction(), edge2);
@@ -16,7 +16,7 @@ bool Triangle::hit(const Ray &r, double t_min, double t_max, HitRecord &rec) con
     // If the determinant is negative, the triangle is backfacing
     if (d < epsilon && !m_doublesided)
         return false;
-    
+
     // The ray and the triangle are parallel
     if (fabs(d) < epsilon)
         return false;
@@ -35,22 +35,22 @@ bool Triangle::hit(const Ray &r, double t_min, double t_max, HitRecord &rec) con
 
     if (v < 0 || u + v > 1) 
         return false;
-
+    
     // Now we are sure the ray intersects the triangle
     double t = dot(edge2, qvec) * inverted_d;
 
     if (t > t_max || t < t_min)
-            return false;
+        return false;
 
-        rec.p = r.at(t);
+    rec.p = r.at(t);
     rec.t = t;
     rec.u = u;
     rec.v = v;
-        rec.mat = material(r.timeframe());
+    rec.mat = material(r.timeframe());
     rec.set_face_normal(r, cross(edge1, edge2));
 
-        return true;
-    }
+    return true;
+}
 
 bool Triangle::boundingBox(double t0, double t1, AABB &bounding_box) const 
 {
@@ -62,6 +62,9 @@ bool Triangle::boundingBox(double t0, double t1, AABB &bounding_box) const
     double y_min = fmin(fmin(m_points[0].y(), m_points[1].y()), m_points[2].y());
     double y_max = fmax(fmax(m_points[0].y(), m_points[1].y()), m_points[2].y());
 
-    bounding_box = AABB(Point3(x_min, y_min, z_min), Point3(x_max, y_max, z_max));
+    const double e = 0.0001;
+    // Sometimes triangles are x y or z plane aligned and we get an infinitely thin AABB
+    // which breaks the BVH. To solve this we simply make sure we add a small amount of padding.
+    bounding_box = AABB(Point3(x_min-e, y_min-e, z_min-e), Point3(x_max+e, y_max+e, z_max+e));
     return true;
 }
