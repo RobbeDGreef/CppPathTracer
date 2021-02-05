@@ -9,53 +9,54 @@ void Triangle::getUV(const Point3 &p, double &u, double &v) const
 bool Triangle::hit(const Ray &r, double t_min, double t_max, HitRecord &rec) const 
 {
     // Möller-Trumbore intersection algorithm
-    const double elipson = 0.000001;
-    Direction edge1, edge2, h, s, q;
-    double a, f, u, v;
 
-    edge1 = m_points[1] - m_points[0];
-    edge2 = m_points[2] - m_points[0];
-    h = cross(r.direction(), edge2);
-    a = dot(edge1, h);
+    const double epsilon = 0.0000001;
+    // The UV coordinates
+    double u, v;
 
-    // Ray is parallel to the triangle
-    if (a > -elipson && a < elipson)
+    Direction edge1 = m_points[1] - m_points[0];
+    Direction edge2 = m_points[2] - m_points[0];
+    Point3 pvec = cross(r.direction(), edge2);
+    double d = dot(edge1, pvec);
+
+    // If the determinant is negative, the triangle is backfacing
+    if (d < epsilon && !m_doublesided)
         return false;
     
-    f = 1.0 / a;
-    s = r.origin() - m_points[0];
-    u = f * dot(s, h);
+    // The ray and the triangle are parallel
+    if (fabs(d) < epsilon)
+        return false;
 
-    if (u < 0.0 || u > 1.0)
+    float inverted_d = 1 / d;
+    Direction tvec = r.origin() - m_points[0];
+    u = dot(tvec, pvec) * inverted_d;
+    
+    // U cannot be greater than 1 or smaller than 0, since, well, that is
+    // kinda the definition of the UV coordinates.
+    if (u < 0 || u > 1) 
         return false;
     
-    q = cross(s, edge1);
-    v = f * dot(r.direction(), q);
+    Point3 qvec = cross(tvec, edge1);
+    v = dot(r.direction(), qvec) * inverted_d;
 
-    if (v < 0.0 || u + v > 1.0)
+    if (v < 0 || u + v > 1) 
         return false;
 
-    // At this point we can compute t
-    double t = f * dot(edge2, q);
-    if (t > elipson) 
-    {
-        // Ray intersection needs to be in range
-        if (t < t_min || t > t_max)
+    // Now we are sure the ray intersects the triangle
+    double t = dot(edge2, qvec) * inverted_d;
+
+    if (t > t_max || t < t_min)
             return false;
 
         rec.p = r.at(t);
-        Direction outward_normal = normalize(cross(edge1, edge2));
-        rec.set_face_normal(r, outward_normal);
+    rec.t = t;
+    rec.u = u;
+    rec.v = v;
         rec.mat = material(r.timeframe());
-        getUV(rec.p, rec.u, rec.v);
+    rec.set_face_normal(r, cross(edge1, edge2));
+
         return true;
     }
-    else
-    {   
-        // We have a line intersection but not a ray intersection
-        return false;
-    }
-}
 
 bool Triangle::boundingBox(double t0, double t1, AABB &bounding_box) const 
 {
