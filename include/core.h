@@ -24,6 +24,7 @@
 #define PACKED( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
 #endif
 
+#define OUT(x) std::cout << x << "\n";
 
 const double inf = std::numeric_limits<double>::infinity();
 const double pi = 3.1415926535897932385;

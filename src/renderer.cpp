@@ -58,7 +58,7 @@ void Renderer::calcProgress(double *percentages)
 
         cnt /= m_thread_amount;
 
-        DEBUG(cnt * 100 << "% completed");
+        OUT(cnt * 100 << "% completed");
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 
@@ -90,7 +90,7 @@ void Renderer::renderThread(int thread_idx, double *percentages)
             m_screen_buf[i][j] = clamp((sqrt((1.0 / m_samples_per_pixel) * pixel_color)), 0.0, 0.999);
         }
     }
-    DEBUG("thread " << thread_idx << " has finished");
+    OUT("thread " << thread_idx << " has finished");
 }
 
 int Renderer::render(int samples, int bounces)
@@ -99,7 +99,7 @@ int Renderer::render(int samples, int bounces)
     m_max_bounces = bounces;
     auto start_chrono = std::chrono::high_resolution_clock::now();
     
-    DEBUG("Rendering on " << m_thread_amount << " cores");
+    OUT("Rendering on " << m_thread_amount << " threads");
 
     double *percentages = new double[m_thread_amount];
 

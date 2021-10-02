@@ -16,6 +16,8 @@
 #include <textures/noise_texture.h>
 #include <textures/image_texture.h>
 
+#include <obj.h>
+
 HitableList genRandom()
 {
     HitableList world;
@@ -118,13 +120,26 @@ int main(int argc, char **argv)
     world.add(std::make_shared<Sphere>(Point3(0,1,-1), 0.1, emis));
 #endif
 
-#if 1
+#if 0
     HitableList world;
     auto mat = std::make_shared<Lambertian>(Color(1,0,0));
     world.add(std::make_shared<Triangle>(Point3(0,0,0), Point3(0.5,1,1), Point3(0.2,0,1), mat));    
 #endif
 
-    Camera cam(Point3(13,2,3), Point3(0,0,0), aspect_ratio, 20, 0.4, 10.0, 0, 1);
+#if 0
+    HitableList world;
+    auto mat = std::make_shared<Lambertian>(Color(1,0,0));
+    world.add(std::make_shared<Triangle>(Point3(0,0,0), Point3(1,1,0), Point3(0.5,0,0), mat));    
+#endif
+
+#if 1
+    Obj object = Obj("objects/cube.obj");
+    HitableList world = object.read();
+    //world.add(std::make_shared<Sphere>(Point3(0,-101,0), 100, std::make_shared<Lambertian>(Color(0.5,0.5,0.5))));
+    //world.add(std::make_shared<Triangle>(Point3(-1, 0, 1+0.25),Point3(1, 0, 1+0.25),Point3(1, 1, 1+0.25), normshade));
+#endif
+
+    Camera cam(Point3(5,2,3), Point3(0,0,0), aspect_ratio, 60, 0.001, -1, 0, 1);
     Renderer renderer(image_width, image_height, world, cam, Color(0.5, 0.55, 0.9));
     renderer.render(300);
     renderer.writeToFile("test.bmp");
