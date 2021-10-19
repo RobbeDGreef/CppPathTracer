@@ -8,4 +8,5 @@ too (for example the BMP write code). So anyone that wants to use code from this
 do so.
 
 ## Current state of things
-![full hires](saved/monkey.bmp "Showing off what it can do")
+![model loading](saved/monkey.bmp "Model loading features")
+![full hires](saved/full.bmp "Showing off what it can do")
