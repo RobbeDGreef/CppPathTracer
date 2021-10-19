@@ -8,4 +8,4 @@ too (for example the BMP write code). So anyone that wants to use code from this
 do so.
 
 ## Current state of things
-![full hires](saved/full_hires.bmp?raw=true "Showing off what it can do")
+![full hires](saved/monkey.bmp "Showing off what it can do")
