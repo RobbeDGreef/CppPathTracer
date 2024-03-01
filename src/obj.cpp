@@ -79,8 +79,8 @@ HitableList Obj::read()
     {
         std::getline(m_infile, line);
         
-        // Skip over comments
-        if (line.front() == '#')
+        // Skip over comments and empty lines
+        if (line.size() == 0 || line.front() == '#')
             continue;
 
         // Split the line into parts by space since this is makes the whole thing easier
