@@ -21,9 +21,9 @@ private:
 
     Color m_background;
 
+    Camera m_cam;
     ColorArray m_screen_buf;
 
-    Camera m_cam;
     BvhNode m_world;
 
 private:
