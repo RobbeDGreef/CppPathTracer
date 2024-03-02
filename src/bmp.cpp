@@ -17,8 +17,6 @@ int Bmp::write(ColorArray &color_array, std::string filename, int width, int hei
     header.id[1] = BMP_HDR_ID_1;
     header.size = 0; // This will be set at the end.
     
-    DEBUG("size: " << header.size);
-    
     header.image_data_offset = sizeof(struct bmp_hdr) +     // Header 1
                                sizeof(struct bmp_dib_hdr);  // Header 2
     
@@ -91,7 +89,6 @@ std::shared_ptr<ColorArray> Bmp::read(std::string filename)
 
     input.seekg(header.image_data_offset, std::ios::beg);
 
-    int image_data_size = bpp * width * height;
     for (int j = 0; j < height; j++)
     {
         for (int i = 0; i < width; i++)

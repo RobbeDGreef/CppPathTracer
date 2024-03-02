@@ -44,7 +44,6 @@ Point3 Obj::parseVec(const std::vector<std::string> &parts, int start_index) con
 
 Point3 Obj::getVert(const std::string vert) const
 {
-    DEBUG(vert);
     // @todo: this is a little clunky
     std::string s;
     int idx = vert.find('/');

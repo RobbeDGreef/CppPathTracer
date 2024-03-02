@@ -5,8 +5,8 @@
 class Ray
 {
 private:
-    Direction m_dir;
     Point3 m_origin;
+    Direction m_dir;
     double m_timeframe;
 
 public:
