@@ -5,8 +5,15 @@ include_directories(include)
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-pthread")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
-set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fno-omit-frame-pointer -fsanitize=address -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -fno-omit-frame-pointer -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter")
+set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -Wall -Werror -fno-omit-frame-pointer -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter")
+
+# Enable optimizations
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+
+# Enable address sanitizer
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+#set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address")
 
 find_package(Threads)
 add_executable(raytracer ${SOURCES})
