@@ -18,7 +18,7 @@ double randomDouble()
     static uint64_t shuffle[2] = {123456789, 987654321};
     uint64_t s1 = shuffle[0];
     uint64_t s0 = shuffle[1];
-    register uint64_t res = s0 + s1;
+    uint64_t res = s0 + s1;
     shuffle[0] = s0;
     s1 ^= s1 << 23;
     shuffle[1] = s1 ^ s0 ^ (s1 >> 18) ^ (s0 >> 5);
