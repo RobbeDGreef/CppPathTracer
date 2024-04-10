@@ -1,10 +1,16 @@
 #include <core.h>
 #include <random.h>
 #include <vec3.h>
+#include <algorithm>
 
 #include <materials/lambertian.h>
 #include <materials/metal.h>
 #include <materials/dielectric.h>
+
+double Material::schlickFresnel(double u)
+{
+    return pow(std::clamp(1.0-u, 0.0, 1.0), 5);
+}
 
 static Direction reflect(const Direction v, const Direction n)
 {
