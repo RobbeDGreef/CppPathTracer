@@ -1,13 +1,13 @@
 #pragma once
 
 #include <core.h>
-#include <hitables/hitable_list.h>
 #include <vec3.h>
+#include <hitables/hitable_list.h>
+#include <fileformats/input_file_format.h>
 
-class Obj
+class Obj : public InputFileFormat
 {
 private:
-    std::ifstream m_infile;
     std::vector<Point3> m_verts;
 
 private:
@@ -15,6 +15,6 @@ private:
     Point3 getVert(const std::string vert) const;
 
 public:
-    Obj(std::string filename);
-    HitableList read();
+    Obj(std::string filename) : InputFileFormat(filename) {}
+    Scene read();
 };

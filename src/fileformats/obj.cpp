@@ -1,4 +1,4 @@
-#include <obj.h>
+#include <fileformats/obj.h>
 #include <hitables/triangle.h>
 
 #include <materials/metal.h>
@@ -22,13 +22,6 @@ static void splitAtChar(std::string &line, std::vector<std::string> &parts, char
     }
     if (buf.size())
         parts.push_back(buf);
-}
-
-Obj::Obj(std::string filename)
-{
-    m_infile.open(filename);
-    if (!m_infile.is_open())
-        WARN("Could not read file: " << filename);
 }
 
 Point3 Obj::parseVec(const std::vector<std::string> &parts, int start_index) const
@@ -58,7 +51,7 @@ Point3 Obj::getVert(const std::string vert) const
     return m_verts[std::stoi(s) - 1];
 }
 
-HitableList Obj::read()
+Scene Obj::read()
 {
     HitableList list;
 
@@ -94,5 +87,5 @@ HitableList Obj::read()
             list.add(std::make_shared<Triangle>(getVert(parts[1]), getVert(parts[2]), getVert(parts[3]), defmat));
     }
 
-    return list;
+    return Scene(list);
 }
