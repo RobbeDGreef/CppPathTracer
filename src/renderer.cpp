@@ -5,16 +5,16 @@
 #include <materials/material.h>
 #include <chrono>
 #include <core.h>
+#include <scene.h>
 
-Renderer::Renderer(int width, int height, HitableList world, Camera cam, Color bg)
-                  : m_cam(cam), m_screen_buf(width, height),
-                    m_world(world, cam.shutterStart(), cam.shutterEnd())
+Renderer::Renderer(int width, int height, Scene scene, Color bg)
+    : m_screen_buf(width, height),
+      m_world(scene.getHitableList()), m_scene(scene)
 {
     m_width = width;
     m_height = height;
     m_background = bg;
 }
-
 
 static Point3 randomInHemisphere(const Direction normal)
 {
@@ -25,10 +25,10 @@ static Point3 randomInHemisphere(const Direction normal)
         return -in_unit_sphere;
 }
 
-Color Renderer::rayColor(const Ray &r, int bounces=0)
+Color Renderer::rayColor(const Ray &r, int bounces = 0)
 {
     if (bounces == m_max_bounces)
-        return Color(0,0,0);
+        return Color(0, 0, 0);
 
     HitRecord rec;
     if (m_world.hit(r, 0.001, inf, rec))
@@ -37,11 +37,11 @@ Color Renderer::rayColor(const Ray &r, int bounces=0)
         Color attenuation;
         Color emitted = rec.mat->emitted(rec.u, rec.v, rec.p);
         if (rec.mat->scatter(r, rec, attenuation, scattered))
-            return emitted + attenuation * rayColor(scattered, bounces+1);
-        
+            return emitted + attenuation * rayColor(scattered, bounces + 1);
+
         return emitted;
     }
-    
+
     return m_background;
 }
 
@@ -72,19 +72,19 @@ void Renderer::renderThread(int thread_idx, double *percentages)
 
     if (thread_idx == m_thread_amount - 1)
         extra = (m_height - work * m_thread_amount);
-    
+
     for (int j = work * thread_idx; j < work * thread_idx + work + extra; ++j)
     {
-        percentages[thread_idx] = (double) (j - work * thread_idx) / (work + extra);
-        
+        percentages[thread_idx] = (double)(j - work * thread_idx) / (work + extra);
+
         for (int i = 0; i < m_width; ++i)
         {
             Color pixel_color;
             for (int s = 0; s < m_samples_per_pixel; ++s)
             {
-                double x = ((double) i + randomDouble()) / (m_width - 1);
-                double y = ((double) j + randomDouble()) / (m_height - 1);
-                Ray r = m_cam.sendRay(x, y);
+                double x = ((double)i + randomDouble()) / (m_width - 1);
+                double y = ((double)j + randomDouble()) / (m_height - 1);
+                Ray r = m_scene.getCamera().sendRay(x, y);
                 pixel_color += rayColor(r);
             }
             m_screen_buf[i][j] = clamp((sqrt((1.0 / m_samples_per_pixel) * pixel_color)), 0.0, 0.999);
@@ -94,11 +94,11 @@ void Renderer::renderThread(int thread_idx, double *percentages)
 }
 
 int Renderer::render(int samples, int bounces)
-{   
+{
     m_samples_per_pixel = samples;
     m_max_bounces = bounces;
     auto start_chrono = std::chrono::high_resolution_clock::now();
-    
+
     OUT("Rendering on " << m_thread_amount << " threads");
 
     double *percentages = new double[m_thread_amount];
@@ -108,7 +108,7 @@ int Renderer::render(int samples, int bounces)
     // before others. Somtimes even at 20%. This means that those threads are not
     // being used for the rest of the render, which is wastefull, a better solution
     // would be to queue the work in smaller parts and feed the threads like that
-    // but this will do for now. 
+    // but this will do for now.
     std::thread *threads = new std::thread[m_thread_amount];
     for (int i = 0; i < m_thread_amount; i++)
     {
@@ -122,10 +122,10 @@ int Renderer::render(int samples, int bounces)
     {
         threads[i].join();
     }
-    
+
     auto stop_chrono = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop_chrono - start_chrono);
-    DEBUG("Rendering done, took: " << (double) duration.count() / 1000 << " seconds");
+    DEBUG("Rendering done, took: " << (double)duration.count() / 1000 << " seconds");
 
     delete[] threads;
     return 0;
