@@ -132,7 +132,6 @@ void GLTF::parseMeshNode(Scene &scene, json &node, json &file, char *bin_data)
 
     for (size_t i = 0; i < indices_count; i += 3)
     {
-        DEBUG("index" << i);
         auto triangle = std::make_shared<Triangle>(
             positions[indices[i + 0]].toPoint3(),
             positions[indices[i + 1]].toPoint3(),
