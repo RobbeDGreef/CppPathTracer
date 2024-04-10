@@ -13,3 +13,7 @@ raytracer*
 perf*
 
 .gdb_history
+shaders
+tmp
+
+benchmarking/
