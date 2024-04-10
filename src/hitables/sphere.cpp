@@ -46,12 +46,8 @@ bool Sphere::hit(const Ray &ray, double t_min, double t_max, HitRecord &rec) con
     return true;
 }
 
-bool Sphere::boundingBox(double t0, double t1, AABB &bounding_box) const
+bool Sphere::boundingBox(AABB &bounding_box) const
 {
-    AABB b0(center(t0) - Point3(radius(t0)), Point3(center(t0)) + Point3(radius(t0)));
-    AABB b1(center(t1) - Point3(radius(t1)), Point3(center(t1)) + Point3(radius(t1)));
-
-    bounding_box = AABB::surroundingBox(b0, b1);
     return true;
 }
 

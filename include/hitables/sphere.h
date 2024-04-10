@@ -24,5 +24,5 @@ public:
         : m_center(center), m_radius(radius), m_mat(mat) {}
     Sphere() {} 
     bool hit(const Ray &r, double t_min, double t_max, HitRecord &rec) const override;
-    bool boundingBox(double t0, double t1, AABB &bounding_box) const override;
+    bool boundingBox(AABB &bounding_box) const override;
 };

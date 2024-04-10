@@ -52,7 +52,7 @@ bool Triangle::hit(const Ray &r, double t_min, double t_max, HitRecord &rec) con
     return true;
 }
 
-bool Triangle::boundingBox(double t0, double t1, AABB &bounding_box) const 
+bool Triangle::boundingBox(AABB &bounding_box) const 
 {
     // Is there a better way?
     double z_min = fmin(fmin(m_points[0].z(), m_points[1].z()), m_points[2].z());

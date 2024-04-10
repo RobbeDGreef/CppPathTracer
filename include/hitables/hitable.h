@@ -29,7 +29,7 @@ class Hitable
 {
 public:
     virtual bool hit(const Ray &r, double t_min, double t_max, HitRecord &rec) const = 0;
-    virtual bool boundingBox(double t0, double t1, AABB &bounding_box) const = 0;
+    virtual bool boundingBox(AABB &bounding_box) const = 0;
 };
 
 using HitablePtr = std::shared_ptr<Hitable>;
