@@ -10,19 +10,9 @@ private:
 
 public:
     Vec3() {}
-    Vec3(T x, T y, T z) 
-    {
-        e[0] = x;
-        e[1] = y;
-        e[2] = z;
-    }
+    constexpr Vec3(T x, T y, T z) : e{x, y, z} {}
 
-    Vec3(T x)
-    {
-        e[0] = x;
-        e[1] = x;
-        e[2] = x;
-    }
+    Vec3(T x) : Vec3(x, x, x) {}
 
     T x() const { return e[0]; }
     T y() const { return e[1]; }
@@ -113,6 +103,12 @@ inline Vec3<T> operator*(double v, const Vec3<T> &x)
 }
 
 template<class T>
+inline Vec3<T> operator*(const Vec3<T> &x, double v)
+{
+    return Vec3<T>(x.x() * v, x.y() * v, x.z() * v);
+}
+
+template<class T>
 inline Vec3<T> operator/(Vec3<T> x, double v)
 {
     return (1 / v) * x;
@@ -178,4 +174,9 @@ inline Vec3<double> maxValues(Point3 x, Point3 y)
     }
 
     return ret;
+}
+
+template <class T>
+inline T lerp(T a, T b, double t) {
+    return a + (b - a) * t;
 }
