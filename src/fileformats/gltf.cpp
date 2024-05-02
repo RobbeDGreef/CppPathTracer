@@ -59,7 +59,7 @@ void GLTF::parseCameraNode(Scene &scene, json &node, json &file)
     //                       1 - 2 * (y*y + z*z));
     //
 
-    scene.setCamera(Camera(location, Point3(0, 0, 0), aspect_ratio, yfov));
+    scene.setCamera(Camera(location, Point3(0, 0, 0), aspect_ratio, yfov, 16));
 }
 
 void *GLTF::getBufferviewData(json file, char *bin_data, int bufferview_idx)
