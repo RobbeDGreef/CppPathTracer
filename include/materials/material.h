@@ -6,10 +6,7 @@
 
 class Material
 {
-protected:
-    double schlickFresnel(double u);
-
-public: 
+public:
     virtual bool scatter(const Ray &r, const HitRecord &rec, Color &attenuation, Ray &scattered) const = 0;
-    virtual Color emitted(double u, double v, const Point3 &p) const { return Color(0,0,0); }
+    virtual bool emitted(double u, double v, const Point3 &p, Color& emission) const { return false; }
 };

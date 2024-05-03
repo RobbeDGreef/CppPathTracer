@@ -10,7 +10,7 @@ private:
     const bool m_doublesided = false;
 
 protected:
-    virtual std::shared_ptr<Material> material(double t) const { return m_mat; }
+    virtual std::shared_ptr<Material> material() const { return m_mat; }
 
 public:
     Triangle(Point3 x, Point3 y, Point3 z, std::shared_ptr<Material> mat) 

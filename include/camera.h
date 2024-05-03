@@ -20,13 +20,13 @@ private:
     Direction m_u;
     Direction m_v;
 
-    double m_shutter_start;
-    double m_shutter_end;
+    double m_near_plane;
+    double m_far_plane;
 
 public:
     Camera(Point3 lookfrom, Point3 lookat, double aspect_ratio=16/9, double vfov=90, 
-           double aperature=2.0, double focus_dist=-1, double starttime=0, double shutterspeed=1/1000,
-           Direction vup=Point3(0,1,0))
+           double aperature=2.0, double focus_dist=-1,
+           Direction vup=Point3(0,1,0), double near_plane=0.001, double far_plane = inf)
     {
         if (focus_dist < 0)
             focus_dist = (lookfrom - lookat).length();
@@ -38,8 +38,8 @@ public:
         m_viewport_height = 2.0 * h;
         m_viewport_width = aspect_ratio * m_viewport_height;
 
-        m_shutter_start = starttime;
-        m_shutter_end = starttime + shutterspeed;
+        m_near_plane = near_plane;
+        m_far_plane = far_plane;
         m_aperature = aperature;
         lookAt(lookat, vup, focus_dist);
     }
@@ -48,19 +48,21 @@ public:
     Point3 vertical() const { return m_vertical; }
     Point3 lowerLeft() const { return m_lowerLeft; }
 
-    double shutterStart() const { return m_shutter_start; }
-    double shutterEnd() const { return m_shutter_end; }
+    double nearplane() const { return m_near_plane; }
+    double farplane() const { return m_far_plane; }
 
     Ray sendRay(double x, double y) 
     {
         Point3 rd = m_aperature / 2 * randomInUnitDisk();
         Point3 offset = rd.x() * m_u + rd.y() * m_v;
-        return Ray(m_origin + offset, lowerLeft() + x * horizontal() + y * vertical() - m_origin - offset,
-                   randomDouble(m_shutter_start, m_shutter_end));
+        return Ray(m_origin + offset, lowerLeft() + x * horizontal() + y * vertical() - m_origin - offset);
     }
 
     void lookAt(Point3 lookat, Direction vup, double focus_dist)
     {
+        // BUG: if the camera is looking perfectly upwards, the normalize() in the next line will cause a 
+        // divide by zero and thus all rays will have direction (nan, nan, nan)
+
         Direction w = normalize(m_origin - lookat);
         m_u = normalize(cross(vup, w));
         m_v = cross(w, m_u);

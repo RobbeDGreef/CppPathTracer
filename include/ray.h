@@ -1,22 +1,21 @@
 #pragma once
 
 #include <vec3.h>
+#include <lights/light.h>
 
 class Ray
 {
-private:
+protected:
     Point3 m_origin;
     Direction m_dir;
-    double m_timeframe;
 
 public:
     Ray() {}
-    Ray(const Point3 &origin, const Direction direction, double timeframe)
-        : m_origin(origin), m_dir(direction), m_timeframe(timeframe) {}
+    Ray(const Point3 &origin, const Direction& direction)
+        : m_origin(origin), m_dir(direction) {}
 
     Point3 origin() const { return m_origin; }
     Direction direction() const { return m_dir; }
-    double timeframe() const { return m_timeframe; }
 
     Point3 at(double t) const
     {
@@ -29,4 +28,13 @@ public:
         //            a new vector. 
         return m_origin + t * m_dir;
     }
+};
+
+class ShadowRay : public Ray
+{
+private:
+    Light& m_light;
+
+public:
+    ShadowRay(const Point3& origin, const Direction& direction, Light& light) : Ray(origin, direction), m_light(light) {}
 };

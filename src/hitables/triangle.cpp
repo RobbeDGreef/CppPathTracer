@@ -46,7 +46,7 @@ bool Triangle::hit(const Ray &r, double t_min, double t_max, HitRecord &rec) con
     rec.t = t;
     rec.u = u;
     rec.v = v;
-    rec.mat = material(r.timeframe());
+    rec.mat = material();
     rec.set_face_normal(r, cross(edge1, edge2));
 
     return true;

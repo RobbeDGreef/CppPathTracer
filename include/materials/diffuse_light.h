@@ -17,8 +17,9 @@ public:
         return false;
     }
     
-    Color emitted(double u, double v, const Point3 &p) const override
+    bool emitted(double u, double v, const Point3 &p, Color& emission) const override
     {
-        return m_emitter->value(u, v, p);
+        emission = m_emitter->value(u, v, p);
+        return true;
     }
 };

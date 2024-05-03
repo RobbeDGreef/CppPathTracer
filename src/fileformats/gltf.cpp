@@ -1,8 +1,10 @@
 #include <core.h>
+#include <vec4.h>
 #include <debug.h>
 #include <fileformats/gltf.h>
 #include <hitables/triangle.h>
 #include <materials/lambertian.h>
+#include <materials/pbr.h>
 #include <textures/uv_texture.h>
 #include <json.h>
 
@@ -52,14 +54,28 @@ void GLTF::parseCameraNode(Scene &scene, json &node, json &file)
     // Transform yfov from radians to degrees
     yfov = (yfov / (2 * pi)) * 360;
 
-    // TODO: issue with the focus distance
-    // Calculate the forward vector from the quaternion rotation
-    // Point3 lookAt = Point3(2 * (y*w + x*z),
-    //                       2 * (z*w + x*y),
-    //                       1 - 2 * (y*y + z*z));
-    //
+    // Default lookAt is just in the forward direction to the center of scene.
+    Point3 lookAt = location - Direction(0, 0, location.length());
 
-    scene.setCamera(Camera(location, Point3(0, 0, 0), aspect_ratio, yfov, 16));
+    // If a rotation is given, calculate the direction of the camera and
+    // use that as the lookAt point with the distance equal to the center of the
+    // scene. (GLTF has no support for focus distance so we assume the focus
+    // distance is the center of the scene)
+    if (node.contains("rotation"))
+    {
+        double x, y, z, w;
+        auto rot = node["rotation"];
+        rot[0].get_to(x);
+        rot[1].get_to(y);
+        rot[2].get_to(z);
+        rot[3].get_to(w);
+
+        // Quaternion multiply with direction vector to get the rotated direction vector.
+        Direction dir = Quaternion(x, y, z, w) * Direction(0, 0, location.length());
+        lookAt = location - dir;
+    }
+
+    scene.setCamera(Camera(location, lookAt, aspect_ratio, yfov, 0.00001));
 }
 
 void *GLTF::getBufferviewData(json file, char *bin_data, int bufferview_idx)
@@ -71,8 +87,50 @@ void *GLTF::getBufferviewData(json file, char *bin_data, int bufferview_idx)
     return bin_data + offset;
 }
 
-std::shared_ptr<Material> GLTF::parseMaterial(json file, int mat_idx) {
-    return std::make_shared<Lambertian>(std::make_shared<UVTexture>());
+std::shared_ptr<Material> GLTF::parseMaterial(json file, int mat_idx)
+{
+    auto material = file["materials"][mat_idx];
+    auto pbr = material["pbrMetallicRoughness"];
+
+    Color emission;
+    double r = 1, g = 1, b = 1, metallic = 1, roughness = 1, emissionStrength = 0;
+
+    if (material.contains("emissiveFactor"))
+    {
+        auto emissiveFactor = material["emissiveFactor"];
+        emissiveFactor[0].get_to(r);
+        emissiveFactor[1].get_to(g);
+        emissiveFactor[2].get_to(b);
+        emissionStrength = 1;
+        emission = Color(r, g, b);
+
+        if (material.contains("extensions") && material["extensions"].contains("KHR_materials_emissive_strength"))
+        {
+            auto em = material["extensions"]["KHR_materials_emissive_strength"];
+            em["emissiveStrength"].get_to(emissionStrength);
+        }
+    }
+
+    if (pbr.contains("baseColorFactor"))
+    {
+        pbr["baseColorFactor"][0].get_to(r);
+        pbr["baseColorFactor"][1].get_to(g);
+        pbr["baseColorFactor"][2].get_to(b);
+    }
+
+    if (pbr.contains("metallicFactor"))
+    {
+        pbr["metallicFactor"].get_to(metallic);
+    }
+
+    if (pbr.contains("roughnessFactor"))
+    {
+        pbr["roughnessFactor"].get_to(roughness);
+    }
+
+    DEBUG("PBR material with color " << Color(r, g, b).to_string() << " metallic " << metallic << " roughness " << roughness);
+
+    return std::make_shared<Pbr>(Color(r, g, b), roughness, metallic, emission, emissionStrength);
 }
 
 void GLTF::parseMeshNode(Scene &scene, json &node, json &file, char *bin_data)
@@ -123,10 +181,26 @@ void GLTF::parseMeshNode(Scene &scene, json &node, json &file, char *bin_data)
     ind_accessor["type"].get_to(type);
     ind_accessor["componentType"].get_to(component_type);
 
-    assert(component_type == GLTF_ACCESSOR_COMPTYPE_USHORT);
+    DEBUG("comptype " << component_type);
+
+    assert(component_type == GLTF_ACCESSOR_COMPTYPE_USHORT || component_type == GLTF_ACCESSOR_COMPTYPE_UINT);
     assert(type == "SCALAR");
 
-    uint16_t *indices = static_cast<uint16_t *>(getBufferviewData(file, bin_data, bufferview_idx));
+    uint32_t *indices = new uint32_t[indices_count];
+
+    if (component_type == GLTF_ACCESSOR_COMPTYPE_USHORT)
+    {
+        uint16_t *temp = static_cast<uint16_t *>(getBufferviewData(file, bin_data, bufferview_idx));
+
+        for (size_t i = 0; i < indices_count; i++)
+        {
+            indices[i] = temp[i];
+        }
+    }
+    else
+    {
+        memcpy(indices, getBufferviewData(file, bin_data, bufferview_idx), sizeof(uint32_t) * indices_count);
+    }
 
     auto mat = parseMaterial(file, material_idx);
 
@@ -139,6 +213,8 @@ void GLTF::parseMeshNode(Scene &scene, json &node, json &file, char *bin_data)
             mat);
         scene.getHitableList().add(triangle);
     }
+
+    delete[] indices;
 }
 
 Scene GLTF::read()
@@ -171,7 +247,8 @@ Scene GLTF::read()
         exit(1);
     }
 
-    char *json_data = new char[chunk.length];
+    char *json_data = new char[chunk.length + 1];
+    json_data[chunk.length] = '\0';
     m_infile.read(json_data, chunk.length);
 
     m_infile.read((char *)&chunk, sizeof(GLTFChunk));

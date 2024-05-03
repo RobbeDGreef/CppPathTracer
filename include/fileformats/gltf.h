@@ -11,7 +11,13 @@ using json = nlohmann::json_abi_v3_11_3::json;
 #define GLTF_CHUNK_TYPE_BIN  0x004E4942
 
 #define GLTF_ACCESSOR_COMPTYPE_USHORT   5123
+#define GLTF_ACCESSOR_COMPTYPE_UINT     5125
 #define GLTF_ACCESSOR_COMPTYPE_FLOAT    5126
+
+/* todo: removeme, this is just to make my ide shut up */
+#ifndef PACKED
+#define PACKED(X) X
+#endif
 
 PACKED(struct GLTFHeader {
     uint32_t magic;

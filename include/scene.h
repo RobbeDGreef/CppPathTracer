@@ -3,10 +3,12 @@
 #include <core.h>
 #include <hitables/hitable_list.h>
 #include <camera.h>
+#include <lights/light.h>
 
 class Scene
 {
 private:
+    std::list<Light> m_lights;
     HitableList m_hitlist;
     Camera m_camera = Camera(Point3(0,0,1), Point3(0,0,0));
 
@@ -28,5 +30,10 @@ public:
     HitableList& getHitableList()
     {
         return m_hitlist;
+    }
+
+    std::list<Light>& getLightList()
+    {
+        return m_lights;
     }
 };

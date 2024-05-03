@@ -90,18 +90,34 @@ Renderer createBenchmarkScene()
 
 Renderer renderFastBenchmarkScene()
 {
-    const double aspect_ratio = 16.0 / 9.0;
+    const double aspect_ratio = 16/9;
     const int image_width = 400;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
 
-    GLTF gltf = GLTF("benchmarking/test.glb");
+    GLTF gltf = GLTF("benchmarking/3_balls.glb");
     Scene scene = gltf.read();
 
-    Renderer renderer(image_width, image_height, scene, Color(0.5, 0.55, 0.9));
+    Renderer renderer(image_width, image_height, scene, Color(0.051, 0.051, 0.051));
     renderer.render(150);
     renderer.writeToFile("test.bmp");
     return renderer;
 }
+
+Renderer renderFastCornellBenchmarkScene()
+{
+    const double aspect_ratio = 1;
+    const int image_width = 400;
+    const int image_height = static_cast<int>(image_width / aspect_ratio);
+
+    GLTF gltf = GLTF("benchmarking/cornell/cornell_boxes_with_mirror.glb");
+    Scene scene = gltf.read();
+
+    Renderer renderer(image_width, image_height, scene, Color(0.051, 0.051, 0.051));
+    renderer.render(150);
+    renderer.writeToFile("test.bmp");
+    return renderer;
+}
+
 
 int main(int argc, char **argv)
 {
@@ -159,6 +175,7 @@ int main(int argc, char **argv)
     world.add(std::make_shared<Triangle>(Point3(0,0,0), Point3(1,1,0), Point3(0.5,0,0), mat));
 #endif
 
-    renderFastBenchmarkScene();
+    //renderFastBenchmarkScene();
+    renderFastCornellBenchmarkScene();
     return 0;
 }

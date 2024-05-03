@@ -7,6 +7,9 @@
 #include <core.h>
 #include <scene.h>
 
+#define RAY_NEAR_CLIP 0.001
+#define RAY_FAR_CLIP inf
+
 Renderer::Renderer(int width, int height, Scene scene, Color bg)
     : m_screen_buf(width, height),
       m_world(scene.getHitableList()), m_scene(scene)
@@ -30,25 +33,56 @@ Color Renderer::rayColor(const Ray &r, int bounces = 0)
     if (bounces == m_max_bounces)
         return Color(0, 0, 0);
 
+    // If we do not hit anything with this ray, we return the background color / texture
     HitRecord rec;
-    if (m_world.hit(r, 0.001, inf, rec))
+    if (!m_world.hit(r, RAY_NEAR_CLIP, RAY_FAR_CLIP, rec))
     {
-        Ray scattered;
-        Color attenuation;
-        Color emitted = rec.mat->emitted(rec.u, rec.v, rec.p);
-        if (rec.mat->scatter(r, rec, attenuation, scattered))
-            return emitted + attenuation * rayColor(scattered, bounces + 1);
-
-        return emitted;
+        // TODO: implement HDRI
+        return m_background;
     }
 
-    return m_background;
+    // We did hit an object, now we calculate its color based on its material, the lights in the scene etc
+    Ray scattered;
+    Color attenuation;
+    
+    // The emitted function returns the amount of emission the material has, 
+    // if this is none, we assume the output variable is not changed and thus stays 0
+    Color output = Color(0);
+    rec.mat->emitted(rec.u, rec.v, rec.p, output);
+
+#if 0
+    // do ray hit with far clip being the distance to the light i think
+    for (Light& light : m_scene.getLightList()) {
+        
+        int hits = 0;
+        for (int i = 0; i < m_shadow_ray_count; i++) {
+            HitRecord shadow_rec;
+            const Ray r = Ray(r.origin(), -light.getDirection(r.origin()));
+            m_world.hit(r, 0, light.getDistanceTo(r.origin()), shadow_rec);
+        }
+    }
+#endif
+
+    // Scatter returns wether the material can scatter and the attentuation the material has.
+    // This is essentially one smaple in the intergral of the rendering equation.
+    Color nextRayColor = Color(1);
+    if (rec.mat->scatter(r, rec, attenuation, scattered))
+    {
+        nextRayColor = rayColor(scattered, bounces + 1);
+    }
+
+    // TODO: is this correct, should you return the attenuation if you stop scattering?
+    // TODO: should emissive material output (already in output variable) be multiplied with attenuation or not
+
+    output += attenuation * nextRayColor;
+
+    return output;
 }
 
 void Renderer::calcProgress(double *percentages)
 {
     double cnt = 0;
-    while (cnt != 1.0)
+    while (cnt < 1.0)
     {
         cnt = 0;
         for (int i = 0; i < m_thread_amount; i++)
@@ -61,8 +95,6 @@ void Renderer::calcProgress(double *percentages)
         OUT(cnt * 100 << "% completed");
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
-
-    delete[] percentages;
 }
 
 void Renderer::renderThread(int thread_idx, double *percentages)
@@ -87,7 +119,7 @@ void Renderer::renderThread(int thread_idx, double *percentages)
                 Ray r = m_scene.getCamera().sendRay(x, y);
                 pixel_color += rayColor(r);
             }
-            m_screen_buf[i][j] = clamp((sqrt((1.0 / m_samples_per_pixel) * pixel_color)), 0.0, 0.999);
+            m_screen_buf[i][j] = clamp((sqrt(pixel_color / m_samples_per_pixel)), 0.0, 0.999);
         }
     }
     OUT("thread " << thread_idx << " has finished");
@@ -127,6 +159,7 @@ int Renderer::render(int samples, int bounces)
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop_chrono - start_chrono);
     DEBUG("Rendering done, took: " << (double)duration.count() / 1000 << " seconds");
 
+    delete[] percentages;
     delete[] threads;
     return 0;
 }
@@ -134,32 +167,4 @@ int Renderer::render(int samples, int bounces)
 int Renderer::writeToFile(std::string file)
 {
     return Bmp::write(m_screen_buf, file, m_width, m_height);
-
-#if 0
-    // PPM file format:  
-
-    DEBUG("Writing to file '" << file << "'");
-    std::ofstream output;
-    output.open(file);
-    
-    if (!output.is_open())
-        return -1;
-    
-    //header
-    output << "P3\n" << m_width << "\n" << m_height << "\n255\n";
-
-    for (int j = m_height - 1; j >= 0; --j)
-    {
-        for (int i = 0; i < m_width; ++i)
-        {
-            Color &color = m_screen_buf[i][j];
-            output << static_cast<int> (255.999 * color[0]) << ' '
-                   << static_cast<int> (255.999 * color[1]) << ' '
-                   << static_cast<int> (255.999 * color[2]) << '\n';
-        }
-    }
-
-    DEBUG("done");
-    return 0;
-#endif
 }

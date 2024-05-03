@@ -15,9 +15,9 @@ private:
     static void getUV(const Point3 &p, double &u, double &v);
 
 protected:
-    virtual Point3 center(double t) const { return m_center; }
-    virtual double radius(double t) const { return m_radius; }
-    virtual std::shared_ptr<Material> material(double t) const { return m_mat; }
+    virtual Point3 center() const { return m_center; }
+    virtual double radius() const { return m_radius; }
+    virtual std::shared_ptr<Material> material() const { return m_mat; }
 
 public:
     Sphere(Point3 center, double radius, std::shared_ptr<Material> mat) 

@@ -14,12 +14,10 @@ bool Sphere::hit(const Ray &ray, double t_min, double t_max, HitRecord &rec) con
     // Which is just a quadratic formula for t. So we just solve that here
     // Then after some simplifying (like vector1 * vector1 is just length squared)
     // and removing our 2.0 factor we get:
-    double t = ray.timeframe();
-    
-    Point3 oc = ray.origin() - center(t);
+    Point3 oc = ray.origin() - center();
     double a = ray.direction().length_squared();
     double half_b = dot(oc, ray.direction());
-    double c = dot(oc, oc) - radius(t) * radius(t);
+    double c = dot(oc, oc) - radius() * radius();
     double d = half_b*half_b - a*c;
     if (d < 0)
         return false;
@@ -38,9 +36,9 @@ bool Sphere::hit(const Ray &ray, double t_min, double t_max, HitRecord &rec) con
 
     rec.t = root;
     rec.p = ray.at(root);
-    Direction outward_normal = (rec.p - center(t)) / radius(t);
+    Direction outward_normal = (rec.p - center()) / radius();
     rec.set_face_normal(ray, outward_normal);
-    rec.mat = material(t);
+    rec.mat = material();
     getUV(outward_normal, rec.u, rec.v);
     
     return true;
