@@ -1,5 +1,7 @@
 #pragma once
 
+#if 0
+
 #include <hitables/hitable.h>
 #include <materials/material.h>
 
@@ -13,3 +15,5 @@ public:
     Metal(const Color &color, double fuzzyness=0.0) : m_albedo(color), m_fuzzyness(fuzzyness) {}
     bool scatter(const Ray &ray, const HitRecord &rec, Color &attenuation, Ray &scattered) const override;
 };
+
+#endif

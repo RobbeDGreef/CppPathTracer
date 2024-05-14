@@ -1,5 +1,7 @@
 #pragma once
 
+#if 0
+
 #include <materials/material.h>
 #include <textures/texture.h>
 
@@ -23,3 +25,5 @@ public:
         return true;
     }
 };
+
+#endif

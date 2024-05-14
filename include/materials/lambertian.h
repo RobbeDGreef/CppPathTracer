@@ -1,5 +1,7 @@
 #pragma once
 
+#if 0
+
 #include <materials/material.h>
 #include <hitables/hitable.h>
 #include <textures/texture.h>
@@ -17,3 +19,5 @@ public:
     
     bool scatter(const Ray &ray, const HitRecord &rec, Color &attenuation, Ray &scattered) const override;
 };
+
+#endif
