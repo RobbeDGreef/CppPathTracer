@@ -68,3 +68,43 @@ bool Triangle::boundingBox(AABB &bounding_box) const
     bounding_box = AABB(Point3(x_min-e, y_min-e, z_min-e), Point3(x_max+e, y_max+e, z_max+e));
     return true;
 }
+
+Point3 Triangle::randomPointIn() const
+{
+    // Reflection method https://blogs.sas.com/content/iml/2020/10/19/random-points-in-triangle.html
+    // Adapted for 3d.
+
+    // TODO: not sure if this actually works
+
+    Direction edge1 = m_points[1] - m_points[0];
+    Direction edge2 = m_points[2] - m_points[0];
+
+    double r1 = randomGen.getDouble();
+    double r2 = randomGen.getDouble();
+
+    if (r1 + r2 > 1)
+    {
+        r1 = 1 - r1;
+        r2 = 1 - r2;
+    }
+
+    return (edge1 * r1 + edge2 * r2) + m_points[0];
+}
+
+double Triangle::pdf(const Ray &r) const
+{
+    HitRecord rec;
+    if (!this->hit(r, 0.0001, inf, rec))
+        return 0;
+
+    // Should be 1/area of triangle
+
+    Direction edge1 = m_points[1] - m_points[0];
+    Direction edge2 = m_points[2] - m_points[0];
+
+    double area = cross(edge1, edge2).length() / 2.0;
+
+    // TODO: again not sure if this is correct
+
+    return 1.0 / area;
+}
