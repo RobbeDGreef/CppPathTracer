@@ -80,8 +80,8 @@ Renderer renderFastCornellBenchmarkScene()
     Scene scene = gltf.read();
 
     Renderer renderer(image_width, image_height, scene, Color(0.051, 0.051, 0.051));
-    // TODO: BUG: high sample counts introduce a lot of high pitched noise?
-    renderer.render(1500, 5);
+    // TODO: BUG: high bounce counts introduce a lot of high pitched noise?
+    renderer.render(500, 5);
     renderer.writeToFile("test.bmp");
     return renderer;
 }
