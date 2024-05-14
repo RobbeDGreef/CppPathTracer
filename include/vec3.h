@@ -180,3 +180,9 @@ template <class T>
 inline T lerp(T a, T b, double t) {
     return a + (b - a) * t;
 }
+
+template <class T>
+inline Vec3<T> fabs(Vec3<T> a)
+{
+    return Vec3(fabs(a[0]), fabs(a[1]), fabs(a[2]));
+}
