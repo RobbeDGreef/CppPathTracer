@@ -26,6 +26,12 @@ AABB AABB::surroundingBox(AABB &b0, AABB &b1)
 {
     return AABB(minValues(b0.min(), b1.min()), maxValues(b0.max(), b1.max()));
 }
+double AABB::volume() const
+{
+    Vec3<double> lengths = m_max - m_min;
+    return lengths[0] * lengths[1] * lengths[2];
+}
+
 void AABB::scale(double scale)
 {
     Vec3<double> diff = m_max - m_min;

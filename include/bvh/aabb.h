@@ -17,8 +17,8 @@ public:
 
     Point3 min() const { return m_min; }
     Point3 max() const { return m_max; }
-
-    bool hit(const Ray &ray, double t_min, double t_max) const;
+    double volume() const;
+    
 
     // static
     static AABB surroundingBox(AABB &b0, AABB &b1);
