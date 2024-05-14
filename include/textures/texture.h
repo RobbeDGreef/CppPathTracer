@@ -14,6 +14,7 @@ private:
     Color m_color;
 public:
     SolidColor() {}
+    SolidColor(double r, double g, double b) : SolidColor(Color(r,g,b)) {}
     SolidColor(Color c) : m_color(c) {}
 
     Color value(double u, double v, const Point3 &p) const override { return m_color; }

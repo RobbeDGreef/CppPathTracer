@@ -7,7 +7,7 @@ PerlinNoise::PerlinNoise()
     m_ranfloat = new double[m_point_count];
 
     for (int i = 0; i < m_point_count; i++)
-        m_ranfloat[i] = randomDouble();
+        m_ranfloat[i] = randomGen.getDouble();
 
     for (int i = 0; i < 3; i++)
         m_perm[i] = generatePerm();
@@ -19,7 +19,7 @@ int *PerlinNoise::generatePerm()
 
     for (int i = 0; i < m_point_count; i++)
         perm[i] = i;
-    
+
     permute(perm, m_point_count);
 
     return perm;
@@ -29,7 +29,7 @@ void PerlinNoise::permute(int *perm, int n)
 {
     for (int i = n - 1; i > 0; --i)
     {
-        int target = randomInt(0, i);
+        int target = randomGen.getInt(0, i);
         int tmp = perm[i];
         perm[i] = perm[target];
         perm[target] = tmp;

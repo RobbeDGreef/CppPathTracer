@@ -18,7 +18,7 @@ private:
     int m_height;
     int m_samples_per_pixel;
     int m_max_bounces;
-    int m_thread_amount = 8;
+    int m_thread_amount = 16;
 
     Color m_background;
 

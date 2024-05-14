@@ -24,13 +24,13 @@ private:
     double m_far_plane;
 
 public:
-    Camera(Point3 lookfrom, Point3 lookat, double aspect_ratio=16/9, double vfov=90, 
-           double aperature=2.0, double focus_dist=-1,
-           Direction vup=Point3(0,1,0), double near_plane=0.001, double far_plane = inf)
+    Camera(Point3 lookfrom, Point3 lookat, double aspect_ratio = 16 / 9, double vfov = 90,
+           double aperature = 2.0, double focus_dist = -1,
+           Direction vup = Point3(0, 1, 0), double near_plane = 0.001, double far_plane = inf)
     {
         if (focus_dist < 0)
             focus_dist = (lookfrom - lookat).length();
-        
+
         m_origin = lookfrom;
 
         double theta = degreeToRad(vfov);
@@ -51,16 +51,17 @@ public:
     double nearplane() const { return m_near_plane; }
     double farplane() const { return m_far_plane; }
 
-    Ray sendRay(double x, double y) 
+    Ray sendRay(double x, double y)
     {
-        Point3 rd = m_aperature / 2 * randomInUnitDisk();
+        Point3 rd = m_aperature / 2 * randomGen.getPoint3InUnitDisk();
         Point3 offset = rd.x() * m_u + rd.y() * m_v;
-        return Ray(m_origin + offset, lowerLeft() + x * horizontal() + y * vertical() - m_origin - offset);
+        Direction dir = lowerLeft() + x * horizontal() + y * vertical() - m_origin - offset;
+        return Ray(m_origin + offset, normalize(dir));
     }
 
     void lookAt(Point3 lookat, Direction vup, double focus_dist)
     {
-        // BUG: if the camera is looking perfectly upwards, the normalize() in the next line will cause a 
+        // BUG: if the camera is looking perfectly upwards, the normalize() in the next line will cause a
         // divide by zero and thus all rays will have direction (nan, nan, nan)
 
         Direction w = normalize(m_origin - lookat);

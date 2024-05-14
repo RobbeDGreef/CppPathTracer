@@ -40,12 +40,13 @@ bool Sphere::hit(const Ray &ray, double t_min, double t_max, HitRecord &rec) con
     rec.set_face_normal(ray, outward_normal);
     rec.mat = material();
     getUV(outward_normal, rec.u, rec.v);
-    
+
     return true;
 }
 
 bool Sphere::boundingBox(AABB &bounding_box) const
 {
+    bounding_box = AABB(m_center - Point3(m_radius), m_center + Point3(m_radius));
     return true;
 }
 

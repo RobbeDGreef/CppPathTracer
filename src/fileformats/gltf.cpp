@@ -4,9 +4,10 @@
 #include <fileformats/gltf.h>
 #include <hitables/triangle.h>
 #include <materials/lambertian.h>
-#include <materials/pbr.h>
+#include <materials/uber.h>
 #include <textures/uv_texture.h>
 #include <json.h>
+#include <lights/point_light.h>
 
 using json = nlohmann::json_abi_v3_11_3::json;
 
@@ -24,6 +25,25 @@ Point3 GLTF::parseNodeTranslation(json &node)
         location = Point3(x, y, z) * GLTF_UNIT_TO_RT_UNIT;
     }
     return location;
+}
+
+Quaternion GLTF::parseNodeRotation(json &node)
+{
+    double x, y, z, w;
+    Quaternion q = Quaternion(0, 0, 0, 1);
+
+    if (node.contains("rotation"))
+    {
+        auto rot = node["rotation"];
+        rot[0].get_to(x);
+        rot[1].get_to(y);
+        rot[2].get_to(z);
+        rot[3].get_to(w);
+
+        q = Quaternion(x, y, z, w);
+    }
+
+    return q;
 }
 
 void GLTF::parseCameraNode(Scene &scene, json &node, json &file)
@@ -54,27 +74,11 @@ void GLTF::parseCameraNode(Scene &scene, json &node, json &file)
     // Transform yfov from radians to degrees
     yfov = (yfov / (2 * pi)) * 360;
 
-    // Default lookAt is just in the forward direction to the center of scene.
-    Point3 lookAt = location - Direction(0, 0, location.length());
+    // Default lookAt is just in the forward direction
+    Direction cameraLookDirection = Direction(0, 0, 1);
+    cameraLookDirection = parseNodeRotation(node) * cameraLookDirection;
 
-    // If a rotation is given, calculate the direction of the camera and
-    // use that as the lookAt point with the distance equal to the center of the
-    // scene. (GLTF has no support for focus distance so we assume the focus
-    // distance is the center of the scene)
-    if (node.contains("rotation"))
-    {
-        double x, y, z, w;
-        auto rot = node["rotation"];
-        rot[0].get_to(x);
-        rot[1].get_to(y);
-        rot[2].get_to(z);
-        rot[3].get_to(w);
-
-        // Quaternion multiply with direction vector to get the rotated direction vector.
-        Direction dir = Quaternion(x, y, z, w) * Direction(0, 0, location.length());
-        lookAt = location - dir;
-    }
-
+    Point3 lookAt = location - cameraLookDirection;
     scene.setCamera(Camera(location, lookAt, aspect_ratio, yfov, 0.00001));
 }
 
@@ -87,12 +91,12 @@ void *GLTF::getBufferviewData(json file, char *bin_data, int bufferview_idx)
     return bin_data + offset;
 }
 
-std::shared_ptr<Material> GLTF::parseMaterial(json file, int mat_idx)
+std::shared_ptr<Material> GLTF::parseMaterial(json file, int mat_idx, bool &is_emissive)
 {
     auto material = file["materials"][mat_idx];
     auto pbr = material["pbrMetallicRoughness"];
 
-    Color emission;
+    std::shared_ptr<Texture> emission = std::make_shared<SolidColor>(Color(0));
     double r = 1, g = 1, b = 1, metallic = 1, roughness = 1, emissionStrength = 0;
 
     if (material.contains("emissiveFactor"))
@@ -102,12 +106,15 @@ std::shared_ptr<Material> GLTF::parseMaterial(json file, int mat_idx)
         emissiveFactor[1].get_to(g);
         emissiveFactor[2].get_to(b);
         emissionStrength = 1;
-        emission = Color(r, g, b);
+        emission = std::make_shared<SolidColor>(r, g, b);
 
         if (material.contains("extensions") && material["extensions"].contains("KHR_materials_emissive_strength"))
         {
             auto em = material["extensions"]["KHR_materials_emissive_strength"];
             em["emissiveStrength"].get_to(emissionStrength);
+            // TODO: maybe we should check if emissionStrength is above some threshold.
+            is_emissive = true;
+            emissionStrength = 3;
         }
     }
 
@@ -128,9 +135,7 @@ std::shared_ptr<Material> GLTF::parseMaterial(json file, int mat_idx)
         pbr["roughnessFactor"].get_to(roughness);
     }
 
-    DEBUG("PBR material with color " << Color(r, g, b).to_string() << " metallic " << metallic << " roughness " << roughness);
-
-    return std::make_shared<Pbr>(Color(r, g, b), roughness, metallic, emission, emissionStrength);
+    return std::make_shared<Uber>(std::make_shared<SolidColor>(r, g, b), roughness, metallic >= 0.1, emission, emissionStrength);
 }
 
 void GLTF::parseMeshNode(Scene &scene, json &node, json &file, char *bin_data)
@@ -181,8 +186,6 @@ void GLTF::parseMeshNode(Scene &scene, json &node, json &file, char *bin_data)
     ind_accessor["type"].get_to(type);
     ind_accessor["componentType"].get_to(component_type);
 
-    DEBUG("comptype " << component_type);
-
     assert(component_type == GLTF_ACCESSOR_COMPTYPE_USHORT || component_type == GLTF_ACCESSOR_COMPTYPE_UINT);
     assert(type == "SCALAR");
 
@@ -202,8 +205,10 @@ void GLTF::parseMeshNode(Scene &scene, json &node, json &file, char *bin_data)
         memcpy(indices, getBufferviewData(file, bin_data, bufferview_idx), sizeof(uint32_t) * indices_count);
     }
 
-    auto mat = parseMaterial(file, material_idx);
+    bool is_emissive = false;
+    auto mat = parseMaterial(file, material_idx, is_emissive);
 
+    auto list = std::make_shared<HitableList>();
     for (size_t i = 0; i < indices_count; i += 3)
     {
         auto triangle = std::make_shared<Triangle>(
@@ -211,7 +216,16 @@ void GLTF::parseMeshNode(Scene &scene, json &node, json &file, char *bin_data)
             positions[indices[i + 1]].toPoint3() * GLTF_UNIT_TO_RT_UNIT,
             positions[indices[i + 2]].toPoint3() * GLTF_UNIT_TO_RT_UNIT,
             mat);
-        scene.getHitableList().add(triangle);
+
+        list->add(triangle);
+    }
+
+    // If this material is emissive, it should be added to the lights
+    scene.getHitableList().add(list);
+
+    if (is_emissive)
+    {
+        scene.getLightList().push_back(list);
     }
 
     delete[] indices;

@@ -1,6 +1,7 @@
 #include <core.h>
 #include <fileformats/input_file_format.h>
 #include <stdint.h>
+#include <vec4.h>
 
 #include <json.h>
 using json = nlohmann::json_abi_v3_11_3::json;
@@ -48,10 +49,11 @@ class GLTF : public InputFileFormat
 {
 private:
     Point3 parseNodeTranslation(json& node);
+    Quaternion parseNodeRotation(json& node);
     void parseCameraNode(Scene& scene, json& node, json& file);
     void parseMeshNode(Scene& scene, json& node, json& file, char* bin_data);
     void* getBufferviewData(json file, char* bin_data, int bufferview_idx);
-    std::shared_ptr<Material> parseMaterial(json file, int mat_idx);
+    std::shared_ptr<Material> parseMaterial(json file, int mat_idx, bool& is_emissive);
 
 public:
     GLTF(std::string filename) : InputFileFormat(filename) {}

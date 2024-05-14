@@ -3,7 +3,8 @@
 
 bool BvhNode::hit(const Ray &ray, double t_min, double t_max, HitRecord &rec) const
 {
-    if (!m_box.hit(ray, t_min, t_max))
+    double t;
+    if (!m_box.hit(ray, t_min, t_max, t))
         return false;
 
     bool hit_left = m_left->hit(ray, t_min, t_max, rec);
@@ -27,7 +28,7 @@ BvhNode::BvhNode(const std::vector<HitablePtr> &_objects, int start, int end)
 {
     auto objects = _objects;
 
-    int axis = randomInt(0, 2);
+    int axis = randomGen.getInt(0, 2);
 
     auto comparator = [axis](HitablePtr &a, HitablePtr &b)
     { return hitableCompare(a, b, axis); };
