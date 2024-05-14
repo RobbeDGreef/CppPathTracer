@@ -21,7 +21,7 @@ Point3 GLTF::parseNodeTranslation(json &node)
         node["translation"][0].get_to(x);
         node["translation"][1].get_to(y);
         node["translation"][2].get_to(z);
-        location = Point3(x, y, z);
+        location = Point3(x, y, z) * GLTF_UNIT_TO_RT_UNIT;
     }
     return location;
 }
@@ -207,9 +207,9 @@ void GLTF::parseMeshNode(Scene &scene, json &node, json &file, char *bin_data)
     for (size_t i = 0; i < indices_count; i += 3)
     {
         auto triangle = std::make_shared<Triangle>(
-            positions[indices[i + 0]].toPoint3(),
-            positions[indices[i + 1]].toPoint3(),
-            positions[indices[i + 2]].toPoint3(),
+            positions[indices[i + 0]].toPoint3() * GLTF_UNIT_TO_RT_UNIT,
+            positions[indices[i + 1]].toPoint3() * GLTF_UNIT_TO_RT_UNIT,
+            positions[indices[i + 2]].toPoint3() * GLTF_UNIT_TO_RT_UNIT,
             mat);
         scene.getHitableList().add(triangle);
     }
