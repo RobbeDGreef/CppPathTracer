@@ -13,6 +13,8 @@ public:
     AABB() {}
     AABB(const Point3 &min, const Point3 &max) : m_min(min), m_max(max) {}
 
+    void scale(double scale);
+
     Point3 min() const { return m_min; }
     Point3 max() const { return m_max; }
 

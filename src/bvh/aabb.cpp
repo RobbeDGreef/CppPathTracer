@@ -26,3 +26,14 @@ AABB AABB::surroundingBox(AABB &b0, AABB &b1)
 {
     return AABB(minValues(b0.min(), b1.min()), maxValues(b0.max(), b1.max()));
 }
+void AABB::scale(double scale)
+{
+    Vec3<double> diff = m_max - m_min;
+    Vec3<double> scaled_diff = diff * scale;
+    Vec3<double> difference = diff - scaled_diff;
+
+    // Scale along the center of this box
+
+    m_min += difference / 2;
+    m_max = m_min + scaled_diff;
+}
