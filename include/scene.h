@@ -4,13 +4,14 @@
 #include <hitables/hitable_list.h>
 #include <camera.h>
 #include <lights/light.h>
+#include <list>
 
 class Scene
 {
 private:
-    std::list<Light> m_lights;
+    std::vector<std::shared_ptr<HitableList>> m_lights;
     HitableList m_hitlist;
-    Camera m_camera = Camera(Point3(0,0,1), Point3(0,0,0));
+    Camera m_camera = Camera(Point3(0, 0, 1), Point3(0, 0, 0));
 
 public:
     Scene() {}
@@ -22,18 +23,18 @@ public:
         m_camera = cam;
     }
 
-    Camera& getCamera()
+    Camera &getCamera()
     {
         return m_camera;
     }
 
-    HitableList& getHitableList()
+    HitableList &getHitableList()
     {
         return m_hitlist;
     }
 
-    std::list<Light>& getLightList()
+    std::vector<std::shared_ptr<HitableList>> &getLightList()
     {
-        return m_lights;
+    return m_lights;
     }
 };

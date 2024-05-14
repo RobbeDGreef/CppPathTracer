@@ -6,6 +6,8 @@
 #include <chrono>
 #include <core.h>
 #include <scene.h>
+#include <pdfs/lightpdf.h>
+#include <pdfs/mixturepdf.h>
 
 #define RAY_NEAR_CLIP 0.001
 #define RAY_FAR_CLIP inf
@@ -17,15 +19,6 @@ Renderer::Renderer(int width, int height, Scene scene, Color bg)
     m_width = width;
     m_height = height;
     m_background = bg;
-}
-
-static Point3 randomInHemisphere(const Direction normal)
-{
-    Point3 in_unit_sphere = randomInUnitSphere();
-    if (dot(in_unit_sphere, normal) > 0.0)
-        return in_unit_sphere;
-    else
-        return -in_unit_sphere;
 }
 
 Color Renderer::rayColor(const Ray &r, int bounces = 0)
@@ -43,38 +36,55 @@ Color Renderer::rayColor(const Ray &r, int bounces = 0)
 
     // We did hit an object, now we calculate its color based on its material, the lights in the scene etc
     Ray scattered;
-    Color attenuation;
-    
+
     // The emitted function returns the amount of emission the material has, 
     // if this is none, we assume the output variable is not changed and thus stays 0
     Color output = Color(0);
     rec.mat->emitted(rec.u, rec.v, rec.p, output);
 
-#if 0
-    // do ray hit with far clip being the distance to the light i think
-    for (Light& light : m_scene.getLightList()) {
-        
-        int hits = 0;
-        for (int i = 0; i < m_shadow_ray_count; i++) {
-            HitRecord shadow_rec;
-            const Ray r = Ray(r.origin(), -light.getDirection(r.origin()));
-            m_world.hit(r, 0, light.getDistanceTo(r.origin()), shadow_rec);
-        }
-    }
-#endif
-
-    // Scatter returns wether the material can scatter and the attentuation the material has.
-    // This is essentially one smaple in the intergral of the rendering equation.
-    Color nextRayColor = Color(1);
-    if (rec.mat->scatter(r, rec, attenuation, scattered))
+    // Scatter the ray to calculate the next ray
+    ScatterRecord srec;
+    if (!rec.mat->scatter(r, rec, srec))
     {
-        nextRayColor = rayColor(scattered, bounces + 1);
+        return output;
     }
 
-    // TODO: is this correct, should you return the attenuation if you stop scattering?
-    // TODO: should emissive material output (already in output variable) be multiplied with attenuation or not
+    double pdf_sample, scattering_pdf;
+    if (srec.skip_pdf)
+    {
+        scattered = srec.scattered_ray;
+        pdf_sample = 1;
+        scattering_pdf = 1;
+    } else {
+        // Evaluate the PDF to find the scatter direction
 
-    output += attenuation * nextRayColor;
+        auto light_pdf = std::make_shared<LightPDF>(rec.p, m_scene.getLightList().front());
+        auto pdf = std::make_shared<MixturePDF>(0.5, srec.pdf, light_pdf);
+        Direction dir = normalize(pdf->generate());
+        scattered = Ray(rec.p, dir);
+        pdf_sample = pdf->value(dir);
+
+        srec.scattered_ray = scattered;
+        scattering_pdf = rec.mat->pdf(r, rec, srec);
+
+        // If an extreme PDF value occurs it causes extreme values in the pixel
+        // due to divisions by a very small number, in theory a good monte carlo
+        // simulation would still filter these out, however, the precision of 
+        // computers is holding us back here and we have to create some form of 
+        // cutoff to make sure we dont cause these extreme pixels.
+
+        // This tends to happen when a bad direction is chosen by the LightPDF 
+        // which causes some epsilon somewhere to claim the ray does not hit the
+        // sampled light, which then causes a 0 probability.
+
+        if (pdf_sample < 0.0001) {
+            pdf_sample = 1;
+            scattering_pdf = 1;
+        }
+
+    }
+
+    output += (srec.attenuation * rayColor(scattered, bounces + 1) * scattering_pdf) / pdf_sample;
 
     return output;
 }
@@ -102,6 +112,8 @@ void Renderer::renderThread(int thread_idx, double *percentages)
     int work = m_height / m_thread_amount;
     int extra = 0;
 
+    randomGen = RandomGenerator();
+
     if (thread_idx == m_thread_amount - 1)
         extra = (m_height - work * m_thread_amount);
 
@@ -114,8 +126,8 @@ void Renderer::renderThread(int thread_idx, double *percentages)
             Color pixel_color;
             for (int s = 0; s < m_samples_per_pixel; ++s)
             {
-                double x = ((double)i + randomDouble()) / (m_width - 1);
-                double y = ((double)j + randomDouble()) / (m_height - 1);
+                double x = ((double)i + randomGen.getDouble()) / (m_width - 1);
+                double y = ((double)j + randomGen.getDouble()) / (m_height - 1);
                 Ray r = m_scene.getCamera().sendRay(x, y);
                 pixel_color += rayColor(r);
             }

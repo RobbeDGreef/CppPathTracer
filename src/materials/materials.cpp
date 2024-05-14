@@ -2,44 +2,14 @@
 #include <random.h>
 #include <vec3.h>
 #include <algorithm>
+#include <onb.h>
 
 #include <materials/lambertian.h>
 #include <materials/metal.h>
 #include <materials/dielectric.h>
 #include <materials/pbr.h>
 
-double schlickFresnel(double u)
-{
-    return pow(std::clamp(1.0-u, 0.0, 1.0), 5);
-}
-
-static Direction reflect(const Direction v, const Direction n)
-{
-    // reflected ray direction should be: v + 2b
-    // and b = v * n
-    // Since we want the reflection to point in we just do v - 2b
-    return v - 2 * dot(v, n) * n;
-}
-
-static Direction refract(const Direction &uv, const Direction &n, double refract_ratio)
-{
-    // Snell's law
-    auto cos_theta = fmin(dot(-uv, n), 1.0);
-    Direction r_out_perp = refract_ratio * (uv + cos_theta*n);
-    Direction r_out_parallel = -sqrt(fabs(1.0 - r_out_perp.length_squared())) * n;
-    return r_out_perp + r_out_parallel;
-}
-
-static double reflectance(double cos, double refract_index)
-{
-    // Schlick's approximation for reflectance
-    // R(theta) = R0 + (1 - R0)(1 - cos(theta))^5
-    // with
-    // R0 = ((n1 - n2) / (n1 + n2))^2
-    double r0 = (1 - refract_index) / (1 + refract_index);
-    r0 *= r0;
-    return r0 + (1 - r0) * pow(1-cos, 5);
-}
+#if 0
 
 bool Lambertian::scatter(const Ray &ray, const HitRecord &rec, Color &attenuation, Ray &scattered) const
 {
@@ -84,108 +54,106 @@ bool Dielectric::scatter(const Ray &ray, const HitRecord &rec, Color &attenuatio
 
     return true;
 }
-
-/**
- * Cook Torrance BRDF
- * 
- * MAIN EQUATION: fr = kd*fl + ks*fc
- * 
- * ks: amount of reflected light
- * kd: amount of refracted light
- * kd = 1 - ks
- * 
- * ??? ks is also the fresnell term F ???
- * 
- * C = albedo color
- * fl = C / PI (lambertian diffuse)
- * 
- * D: Normal distribution function
- * G: Geometry function
- * fc = (D*G*F) / (4 * (l . n) * (v . n))
- * 
- * For D we choose the GGX distribution function
- * D = a^2 / (pi * ((n . h)^2 * (a^2 - 1) + 1)^2)
- * 
- * G will be the Sclick GGX approximation
- * G = Gs(n,v,k)*Gs(n,l,k)
- * Gs = (n.v) / ( (n.v) * (1 - k) + k )
- * 
- * F is the Schlick fresnell approximation
-*/
-
-double distributionGGX(Direction n, Direction h, double roughness) {
-    double a = roughness*roughness;
-    double a2 = a*a;
-    double ndoth = dot(n, h);
-    double term = ((ndoth*ndoth) * (a2 - 1) + 1);
-    return a2 / (pi * term*term);
-}
-
-double geometrySchlickGGX(double ndotv, double roughness) {
-    double r = roughness + 1;
-    double k = r*r / 8.0;
-    return ndotv / (ndotv*(1 - k) + k);
-}
-
-double geometrySmith(Direction n, Direction v, Direction l, double roughness) {
-    double ndotv = fmax(dot(n, v), 0.0);
-    double ndotl = fmax(dot(n, l), 0.0);
-    double ggx2  = geometrySchlickGGX(ndotv, roughness);
-    double ggx1  = geometrySchlickGGX(ndotl, roughness);
-
-    return ggx1 * ggx2;
-}
-
-
-bool Pbr::scatter(const Ray &ray, const HitRecord &rec, Color &attenuation, Ray &scattered) const {
-#if 0
-    Direction reflected = reflect(normalize(ray.direction()), rec.normal);
-    scattered = Ray(rec.p, reflected + m_roughness * randomInUnitSphere());
-    attenuation = m_baseColor;
-    return (dot(scattered.direction(), rec.normal) > 0);
 #endif
 
-    Direction n = normalize(rec.normal);
-    //Direction scatter_direction = reflect(normalize(ray.direction()), n) + m_roughness * randomInUnitSphere();
-    Direction scatter_direction = normalize(n + normalize(randomInUnitSphere()));
-     
-    // Check if the scatter direction is valid and not near zero
-    if (scatter_direction.isNearZero())
-        scatter_direction = n;
+#if 0
+Color Pbr::color(const Ray &ray, const HitRecord &rec, const Ray &light_ray) const
+{
 
-    // Calculate the F0 term, use the average F0 of 0.04 for dielectric materials
-    // and calculate a linear interpolation between that average and the material color
-    // if the material is not dielectric.
-    Color F0 = lerp(Color(0.04), m_baseColor, m_metalic);
+    const Color base = m_baseColor->value(rec.u, rec.v, rec.p);
 
-    // Cook Torrance BRDF
-    Direction l = scatter_direction;
-    Direction v = ray.direction();
+    // Metallic materials use the base color as attenuation to the reflected ray.
+    // if (m_metallic)
+    //{
+    //    return base;
+    //}
 
-    Direction h = normalize(v + l);
-    double NDF = distributionGGX(n, h, m_roughness);
-    double G = geometrySmith(n, v, l, m_roughness);
-    
-    double ndotv = dot(n, v);
+    // Non material or dielectric material.
+    // Calculate diffuse and specular terms
+
+    const Direction v = normalize(-ray.direction());
+    const Direction l = normalize(light_ray.direction());
+    const Direction n = normalize(rec.normal);
     double ndotl = dot(n, l);
 
-    Color F = F0 + (Color(1) - F0) * schlickFresnel(fmax(dot(v, h), 0));
-
-    Color ks = F;
-    Color kd = Color(1) - ks;
-    kd *= 1 - m_metalic;
-
-    Color fs = (NDF * G * F) / (4 * fmax(ndotv, 0) * fmax(ndotl, 0) + 0.000001);
-    Color fd = kd / pi;
-
-    attenuation = m_baseColor * (fd + fs) * fmax(ndotl, 0);
-    scattered = Ray(rec.p, scatter_direction);
-
-    return true;
+    return BRDFCookTorrance(v, l, n, m_metallic, m_roughness, base) * fmax(ndotl, 0);
 }
 
-bool Pbr::emitted(double u, double v, const Point3 &p, Color& emission) const {
-    emission = m_emission * m_emission_strength;
+
+bool Pbr::scatter(const Ray &ray, const HitRecord &rec, Ray &scatter, Color attenuation, double& pdf) const
+{
+
+    Direction n = normalize(rec.normal);
+#if 0
+    if (m_metallic) {
+        // Metallic materials reflect the light along the normal, we add a random
+        // term to simulate a rough metallic surface.
+        Direction reflected = reflect(normalize(ray.direction()), n);
+        scatter = Ray(rec.p, reflected + m_roughness * randomInUnitSphere());
+
+        // The random in unit sphere could create a ray that scatters into the material
+        // to overcome this we flip the direction vector
+        if (dot(scatter.direction(), n) < 0) {
+            scatter = Ray(rec.p, -scatter.direction());
+        }
+    }
+#endif
+
+#if 0
+    // TODO this is code duplication
+    const Color base = m_baseColor->value(rec.u, rec.v, rec.p);
+    Color F0 = lerp(Color(0.04), base, m_metallic);
+
+    // TODO: what to do with this reflectance
+    Color reflectance;
+
+    Direction out = sampleGGX(-ray.direction(), n, m_roughness, F0, reflectance);
+
+    scatter = Ray(rec.p, out);
+#endif
+
+#if 0
+    // Lambertian diffuse
+
+    Direction scatter_direction = rec.normal + normalize(randomInUnitSphere());
     
+    // Check if the scatter direction is valid and not near zero
+    if (scatter_direction.isNearZero())
+        scatter_direction = rec.normal;
+
+    scattered = Ray(rec.p, scatter_direction);
+    attenuation = m_texture->value(rec.u, rec.v, rec.p);
+    return true;
+
+#endif
+
+#if 1
+    ONB base(n);
+
+    double r1 = randomDouble();
+    double r2 = randomDouble();
+
+    double phi = 2 * pi * r1;
+    Direction dir = Direction(cos(phi)*sqrt(r2), sin(phi)*sqrt(r2), sqrt(1-r2));
+    
+    pdf = dot(base.w(), dir) / pi;
+    scatter = Ray(rec.p, dir);
+
+#endif
+
     return true;
 }
+
+double Pbr::pdf(const Ray &in, const Ray &out, const HitRecord &rec) const
+{
+    return dot(-in.direction(), rec.normal) * pi;
+}
+
+bool Pbr::emitted(double u, double v, const Point3 &p, Color &emission) const
+{
+    emission = m_emission->value(u, v, p) * m_emission_strength;
+
+    return true;
+}
+
+#endif
