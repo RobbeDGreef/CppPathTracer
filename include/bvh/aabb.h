@@ -2,6 +2,7 @@
 
 #include <vec3.h>
 #include <ray.h>
+#include <sampleable.h>
 
 class AABB
 {
@@ -19,6 +20,8 @@ public:
     Point3 max() const { return m_max; }
     double volume() const;
     
+    bool hit(const Ray &ray, double t_min, double t_max, double &t) const;
+    Point3 randomPointIn() const;
 
     // static
     static AABB surroundingBox(AABB &b0, AABB &b1);
