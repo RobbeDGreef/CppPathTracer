@@ -3,7 +3,6 @@
 #include <core.h>
 #include <hitables/hitable_list.h>
 #include <camera.h>
-#include <lights/light.h>
 #include <list>
 
 class Scene

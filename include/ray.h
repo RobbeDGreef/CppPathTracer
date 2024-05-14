@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vec3.h>
-#include <lights/light.h>
 
 class Ray
 {
@@ -28,13 +27,4 @@ public:
         //            a new vector. 
         return m_origin + t * m_dir;
     }
-};
-
-class ShadowRay : public Ray
-{
-private:
-    Light& m_light;
-
-public:
-    ShadowRay(const Point3& origin, const Direction& direction, Light& light) : Ray(origin, direction), m_light(light) {}
 };

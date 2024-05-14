@@ -7,7 +7,6 @@
 #include <materials/uber.h>
 #include <textures/uv_texture.h>
 #include <json.h>
-#include <lights/point_light.h>
 
 using json = nlohmann::json_abi_v3_11_3::json;
 

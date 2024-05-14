@@ -16,8 +16,6 @@
 #include <textures/noise_texture.h>
 #include <textures/image_texture.h>
 
-#include <lights/point_light.h>
-
 #include <fileformats/obj.h>
 #include <fileformats/gltf.h>
 
