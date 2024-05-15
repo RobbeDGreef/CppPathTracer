@@ -88,7 +88,7 @@ double geometrySmith(Direction n, Direction v, Direction l, double roughness)
     return ggx1 * ggx2;
 }
 
-inline Point3 sphericalToCartesian(double theta, double phi)
+Point3 sphericalToCartesian(double theta, double phi)
 {
     double x = sinf(theta) * cosf(phi);
     double y = sinf(theta) * sinf(phi);

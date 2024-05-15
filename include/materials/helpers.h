@@ -14,3 +14,4 @@ Direction sampleGGX(const Direction& view, const Direction& normal, double rough
 Color BRDFCookTorrance(const Direction v, const Direction l, const Direction n, double metallic, double roughness, Color c);
 Direction lambertianScatter(const Direction& normal);
 Direction metalScatter(const Direction& normal, const Direction& in, double fuzzyness);
+Point3 sphericalToCartesian(double theta, double phi);
