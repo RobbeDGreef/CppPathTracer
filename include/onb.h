@@ -35,6 +35,11 @@ public:
         return v.x() * m_axis[0] + v.y() * m_axis[1] + v.z() * m_axis[2];
     }
 
+    Direction fromWorld(const Direction &v) const 
+    {
+        return Direction(dot(v, m_axis[0]), dot(v, m_axis[1]), dot(v, m_axis[2]));
+    }
+
     Direction u() const { return m_axis[0]; }
     Direction v() const { return m_axis[1]; }
     Direction w() const { return m_axis[2]; }
