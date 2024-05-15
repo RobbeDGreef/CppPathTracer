@@ -49,7 +49,7 @@ Color Renderer::rayColor(const Ray &r, int bounces = 0)
         return output;
     }
 
-    double pdf_sample, scattering_pdf;
+    double pdf_sample;
     if (srec.skip_pdf)
     {
         scattered = srec.scattered_ray;
@@ -65,7 +65,6 @@ Color Renderer::rayColor(const Ray &r, int bounces = 0)
         pdf_sample = pdf->value(dir);
 
         srec.scattered_ray = scattered;
-        scattering_pdf = rec.mat->pdf(r, rec, srec);
 
         // If an extreme PDF value occurs it causes extreme values in the pixel
         // due to divisions by a very small number, in theory a good monte carlo
@@ -79,12 +78,11 @@ Color Renderer::rayColor(const Ray &r, int bounces = 0)
 
         if (pdf_sample < 0.0001) {
             pdf_sample = 1;
-            scattering_pdf = 1;
         }
 
     }
 
-    output += (srec.attenuation * rayColor(scattered, bounces + 1) * scattering_pdf) / pdf_sample;
+    output += (rec.mat->eval(r, rec, srec) * rayColor(scattered, bounces + 1)) / pdf_sample;
 
     return output;
 }
