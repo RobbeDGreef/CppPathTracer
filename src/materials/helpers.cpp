@@ -1,11 +1,8 @@
 #include <vec3.h>
 #include <onb.h>
 #include <random.h>
+#include <materials/helpers.h>
 
-Color schlickFresnel(Color F0, double u)
-{
-    return F0 + (Color(1) - F0) * pow(std::clamp(1.0 - u, 0.0, 1.0), 5);
-}
 Direction reflect(const Direction v, const Direction n)
 {
     // reflected ray direction should be: v + 2b

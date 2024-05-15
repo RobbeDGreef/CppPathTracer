@@ -5,7 +5,13 @@
 double reflectance(double cos, double refract_index);
 Direction refract(const Direction &uv, const Direction &n, double refract_ratio);
 Direction reflect(const Direction v, const Direction n);
-Color schlickFresnel(Color F0, double u);
+
+template <typename T>
+T schlickFresnel(T F0, double u)
+{
+    return F0 + (T(1) - F0) * pow(std::clamp(1.0 - u, 0.0, 1.0), 5);
+}
+
 double distributionGGX(Direction n, Direction h, double roughness);
 double geometrySchlickGGX(double ndotv, double roughness);
 double geometrySmith(Direction n, Direction v, Direction l, double roughness);
