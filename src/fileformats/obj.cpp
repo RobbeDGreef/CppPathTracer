@@ -2,7 +2,7 @@
 #include <hitables/triangle.h>
 
 #include <materials/metal.h>
-#include <materials/uber.h>
+#include <materials/pbr.h>
 
 static void splitAtChar(std::string &line, std::vector<std::string> &parts, char split)
 {
@@ -56,7 +56,7 @@ Scene Obj::read()
 
     //auto defmat = std::make_shared<Metal>(Color(0.9,0.9,0.9), 0.5);
     //auto defmat = std::make_shared<Lambertian>(std::make_shared<UVTexture>());
-    auto defmat = std::make_shared<Uber>(std::make_shared<SolidColor>(0.8, 0.1, 0.1), 1, 0, std::make_shared<SolidColor>(0), 0);
+    auto defmat = std::make_shared<PBR>(std::make_shared<SolidColor>(0.8, 0.1, 0.1), 1, 0, 0, std::make_shared<SolidColor>(0), 0);
 
     if (!m_infile.is_open())
     {

@@ -9,7 +9,7 @@
 #include <materials/dielectric.h>
 #include <materials/metal.h>
 #include <materials/diffuse_light.h>
-#include <materials/uber.h>
+#include <materials/pbr.h>
 
 #include <textures/texture.h>
 #include <textures/checker_texture.h>
@@ -26,18 +26,18 @@ Renderer renderFastMaterialTestScene()
     const int image_height = static_cast<int>(image_width / aspect_ratio);
 
     Scene scene;
-    auto mat = std::make_shared<Uber>(std::make_shared<SolidColor>(1, 0, 0), 1, 0, std::make_shared<SolidColor>(0), 0);
+    auto mat = std::make_shared<PBR>(std::make_shared<SolidColor>(1, 0, 0), 1, 0, 0, std::make_shared<SolidColor>(0), 0);
     auto sphere = std::make_shared<Sphere>(Point3(0,0,0), 1, mat);
     scene.getHitableList().add(sphere);
 
 
-    auto mat2 = std::make_shared<Uber>(std::make_shared<SolidColor>(1, 1, 1), 0.1, 1, std::make_shared<SolidColor>(0), 0);
+    auto mat2 = std::make_shared<PBR>(std::make_shared<SolidColor>(1, 1, 1), 0.1, 1, 0, std::make_shared<SolidColor>(0), 0);
     auto sphere2 = std::make_shared<Sphere>(Point3(-2.5, 0, 0), 1, mat2);
     scene.getHitableList().add(sphere2);
 
     // Light
 #if 1
-    auto emit = std::make_shared<Uber>(std::make_shared<SolidColor>(1), 0, 0, std::make_shared<SolidColor>(1), 500);
+    auto emit = std::make_shared<PBR>(std::make_shared<SolidColor>(1), 0, 0, 0, std::make_shared<SolidColor>(1), 500);
     auto lightSphere = std::make_shared<Sphere>(Point3(4, 2, 7), 0.5, emit);
     scene.getHitableList().add(lightSphere);
 #else
@@ -76,12 +76,12 @@ Renderer renderFastCornellBenchmarkScene()
     const int image_width = 400;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
 
-    GLTF gltf = GLTF("benchmarking/cornell/cornell_boxes_2.glb");
+    GLTF gltf = GLTF("benchmarking/cornell/cornell_boxes_3_balls.glb");
     Scene scene = gltf.read();
 
     Renderer renderer(image_width, image_height, scene, Color(0.051, 0.051, 0.051));
     // TODO: BUG: high bounce counts introduce a lot of high pitched noise?
-    renderer.render(500, 5);
+    renderer.render(200, 50);
     renderer.writeToFile("test.bmp");
     return renderer;
 }

@@ -4,7 +4,7 @@
 #include <fileformats/gltf.h>
 #include <hitables/triangle.h>
 #include <materials/lambertian.h>
-#include <materials/uber.h>
+#include <materials/pbr.h>
 #include <textures/uv_texture.h>
 #include <json.h>
 
@@ -96,7 +96,7 @@ std::shared_ptr<Material> GLTF::parseMaterial(json file, int mat_idx, bool &is_e
     auto pbr = material["pbrMetallicRoughness"];
 
     std::shared_ptr<Texture> emission = std::make_shared<SolidColor>(Color(0));
-    double r = 1, g = 1, b = 1, metallic = 1, roughness = 1, emissionStrength = 0;
+    double r = 1, g = 1, b = 1, metallic = 1, roughness = 1, emissionStrength = 0, transmission = 0;
 
     if (material.contains("emissiveFactor"))
     {
@@ -105,15 +105,26 @@ std::shared_ptr<Material> GLTF::parseMaterial(json file, int mat_idx, bool &is_e
         emissiveFactor[1].get_to(g);
         emissiveFactor[2].get_to(b);
         emissionStrength = 1;
+        is_emissive = true;
         emission = std::make_shared<SolidColor>(r, g, b);
+    }
 
-        if (material.contains("extensions") && material["extensions"].contains("KHR_materials_emissive_strength"))
+    // Handle extensions to the regular GLTF specification
+    if (material.contains("extensions"))
+    {
+        auto extensions = material["extensions"];
+
+        if (extensions.contains("KHR_materials_emissive_strength"))
         {
             auto em = material["extensions"]["KHR_materials_emissive_strength"];
             em["emissiveStrength"].get_to(emissionStrength);
+
             // TODO: maybe we should check if emissionStrength is above some threshold.
             is_emissive = true;
-            emissionStrength = 3;
+        }
+
+        if (extensions.contains("KHR_materials_transmission")) {
+            extensions["KHR_materials_transmission"]["transmissionFactor"].get_to(transmission);
         }
     }
 
@@ -134,7 +145,8 @@ std::shared_ptr<Material> GLTF::parseMaterial(json file, int mat_idx, bool &is_e
         pbr["roughnessFactor"].get_to(roughness);
     }
 
-    return std::make_shared<Uber>(std::make_shared<SolidColor>(r, g, b), roughness, metallic >= 0.1, emission, emissionStrength);
+    DEBUG("Material with roughness " << roughness << " metallic " << metallic << " transmission " << transmission << " emission strength " << emissionStrength);
+    return std::make_shared<PBR>(std::make_shared<SolidColor>(r, g, b), roughness, metallic >= 0.1, transmission, emission, emissionStrength);
 }
 
 void GLTF::parseMeshNode(Scene &scene, json &node, json &file, char *bin_data)

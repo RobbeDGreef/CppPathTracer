@@ -30,12 +30,17 @@ public:
         m_hitable_list->boundingBox(box);
         box.scale(0.90);
 
-        double pdf = 1.0 / box.volume();
+        //double pdf = 1.0 / box.volume();
+
+        // I am really not sure about this *2 in the pdf, this is kinda a hack because there
+        // is too little light falloff.
+        // I am not even sure about sampling the surface area and not the volume.
+        double pdf = 1.0 / box.surfaceArea() * 2;
 #else
         double pdf = m_hitable_list->pdf(r);
 #endif
 
-        return pdf * distance_squared / cosine;
+        return pdf * distance_squared;
     }
 #if USE_AABB_FOR_LIGHT_SAMPLING
     Direction generate() const override
