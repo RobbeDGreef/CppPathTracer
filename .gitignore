@@ -16,4 +16,7 @@ perf*
 shaders
 tmp
 
-benchmarking/
+benchmarking/*
+!benchmarking/benchmark-campaign
+benchmarking/benchmark-campaign/results
+benchmarking/benchmark-campaign/venv
