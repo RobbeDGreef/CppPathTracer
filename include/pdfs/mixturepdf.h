@@ -16,12 +16,12 @@ public:
 
     double value(const Direction &dir) const override
     {
-        return m_mix * m_p1->value(dir) + (1.0 - m_mix) * m_p2->value(dir);
+        return lerp(m_p1->value(dir), m_p2->value(dir), m_mix);
     }
 
     Direction generate() const override
     {
-        if (randomGen.getDouble() < m_mix)
+        if (randomGen.getDouble() > m_mix)
         {
             return m_p1->generate();
         }
