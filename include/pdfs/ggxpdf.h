@@ -27,7 +27,7 @@ public:
         double ndoth = dot(n, h);
         double vdoth = dot(v, h);
 
-        return distributionGGX(n, h, m_roughness) * ndoth / (4 * vdoth);
+        return fmax(distributionGGX(n, h, m_roughness) * ndoth / (4 * vdoth), 0);
     }
 
     Direction generate() const override
