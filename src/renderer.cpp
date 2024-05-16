@@ -24,7 +24,7 @@ Renderer::Renderer(int width, int height, Scene scene, Color bg)
 Color Renderer::rayColor(const Ray &r, int bounces = 0)
 {
     if (bounces == m_max_bounces)
-        return Color(0, 0, 0);
+        return Color(0);
 
     // If we do not hit anything with this ray, we return the background color / texture
     HitRecord rec;
@@ -54,7 +54,6 @@ Color Renderer::rayColor(const Ray &r, int bounces = 0)
     {
         scattered = srec.scattered_ray;
         pdf_sample = 1;
-        scattering_pdf = 1;
     } else {
         // Evaluate the PDF to find the scatter direction
 
@@ -79,7 +78,6 @@ Color Renderer::rayColor(const Ray &r, int bounces = 0)
         if (pdf_sample < 0.0001) {
             pdf_sample = 1;
         }
-
     }
 
     output += (rec.mat->eval(r, rec, srec) * rayColor(scattered, bounces + 1)) / pdf_sample;
@@ -129,7 +127,9 @@ void Renderer::renderThread(int thread_idx, double *percentages)
                 Ray r = m_scene.getCamera().sendRay(x, y);
                 pixel_color += rayColor(r);
             }
-            m_screen_buf[i][j] = clamp((sqrt(pixel_color / m_samples_per_pixel)), 0.0, 0.999);
+            Color linear_color = pixel_color / m_samples_per_pixel;
+            Color gamma_corrected = pow(linear_color, 1.0/2.2);
+            m_screen_buf[i][j] = clamp(gamma_corrected, 0.0, 1.0);
         }
     }
     OUT("thread " << thread_idx << " has finished");
