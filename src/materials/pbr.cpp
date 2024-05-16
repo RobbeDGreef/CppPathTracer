@@ -8,7 +8,7 @@
 #include <pdfs/ggxpdf.h>
 
 
-#define USE_COOK_TORRANCE 1
+#define USE_COOK_TORRANCE 0
 
 #if 1
 
@@ -43,25 +43,8 @@ Color PBR::eval(const Ray &in, const HitRecord &rec, const ScatterRecord &srec) 
 #else
 bool PBR::scatter(const Ray &ray, const HitRecord &rec, ScatterRecord &scatter) const
 {
-    // TODO: may have to be removed once nan/inf issues are resolved
-    if (m_emission_strength > 0.01) {
-        return false;
-    }
-
-    Direction n = normalize(rec.normal);
-    Direction v = normalize(-ray.direction());
-
-    if (m_metallic) {
-        scatter.skip_pdf = true;
-        scatter.scattered_ray = Ray(rec.p, metalScatter(n, v, m_roughness));
-        return true;
-    }
-
-    // Non-metallic / dielectric ray
-
-    // TODO: add transmission
     scatter.skip_pdf = false;
-    scatter.pdf = std::make_shared<GGXPDF>(ray, n, m_roughness, 0.04);
+    scatter.pdf = std::make_shared<GGXPDF>(ray, normalize(rec.normal), m_roughness);
     //scatter.pdf = std::make_shared<CosinePDF>(rec.normal);
 
     return true;
@@ -78,21 +61,10 @@ Color PBR::eval(const Ray &in, const HitRecord &rec, const ScatterRecord &srec) 
 {
     Color base = m_baseColor->value(rec.u, rec.v, rec.p);
 
-#if 0
-
-    if (m_metallic) {
-        return base;
-    }
-
-    double cos_theta = dot(normalize(rec.normal), normalize(srec.scattered_ray.direction()));
-    if (cos_theta < 0) return 0;
-
-    return base * cos_theta / pi;
-#endif
-
     Direction v = normalize(-in.direction());
     Direction l = normalize(srec.scattered_ray.direction());
     Direction n = normalize(rec.normal);
+
     return BRDFCookTorrance(v, l, n, m_metallic, m_roughness, base) * dot(n, l);
 }
 
