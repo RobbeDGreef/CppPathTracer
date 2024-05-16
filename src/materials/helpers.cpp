@@ -93,13 +93,13 @@ Point3 sphericalToCartesian(double theta, double phi)
     return Point3(x, y, z);
 }
 
-Direction sampleGGX(const Direction& view, const Direction& normal, double roughness, Color F0, Color &reflectance)
+Direction sampleGGX(const Direction &view, const Direction &normal, double roughness, Color F0, Color &reflectance)
 {
     // FUTURE ROBBE: the issue here is that the base of these vectors should be orthonormal
 
     ONB base(normal);
-    Direction v = base.local(view);
-    Direction n = base.local(normal);
+    Direction v = base.fromWorld(view);
+    Direction n = Direction(0, 0, 1);
 
     // TODO: see https://schuttejoe.github.io/post/ggximportancesamplingpart2/ for better sampler
     double r0 = randomGen.getDouble();
@@ -115,8 +115,9 @@ Direction sampleGGX(const Direction& view, const Direction& normal, double rough
     double ndotv = dot(n, v);
     double ndoth = dot(n, h);
     double vdoth = dot(v, h);
-    
-    if (dot(n, out) > 0.0 && dot(out, h) > 0.0) {
+
+    if (dot(n, out) > 0.0 && dot(out, h) > 0.0)
+    {
         Color F = schlickFresnel(F0, fmax(dot(v, h), 0));
         double G = geometrySmith(n, v, out, roughness);
         double weight = fabs(vdoth) / (ndotv * ndoth);
@@ -138,7 +139,7 @@ Color BRDFCookTorrance(const Direction v, const Direction l, const Direction n, 
     double ndotv = dot(n, v);
     double ndotl = dot(n, l);
 
-    Color F = schlickFresnel(F0, fmax(dot(v, h), 0));
+    Color F = schlickFresnel(F0, dot(v, h));
 
     Color ks = F;
     Color kd = Color(1) - ks;
@@ -150,10 +151,10 @@ Color BRDFCookTorrance(const Direction v, const Direction l, const Direction n, 
     return (fd + fs);
 }
 
-Direction lambertianScatter(const Direction& normal)
+Direction lambertianScatter(const Direction &normal)
 {
     Direction scatter_direction = normal + normalize(randomGen.getPoint3InUnitSphere());
-    
+
     // Check if the scatter direction is valid and not near zero
     if (scatter_direction.isNearZero())
         scatter_direction = normal;
@@ -161,7 +162,7 @@ Direction lambertianScatter(const Direction& normal)
     return scatter_direction;
 }
 
-Direction metalScatter(const Direction& normal, const Direction& in, double fuzzyness)
+Direction metalScatter(const Direction &normal, const Direction &in, double fuzzyness)
 {
     Direction reflected = reflect(normalize(in), normal);
     return reflected + fuzzyness * randomGen.getPoint3InUnitSphere();
