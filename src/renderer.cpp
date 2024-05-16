@@ -11,6 +11,7 @@
 
 #define RAY_NEAR_CLIP 0.001
 #define RAY_FAR_CLIP inf
+#define MAX_SAMPLE_OUTPUT_COLOR 20
 
 Renderer::Renderer(int width, int height, Scene scene, Color bg)
     : m_screen_buf(width, height),
@@ -75,12 +76,18 @@ Color Renderer::rayColor(const Ray &r, int bounces = 0)
         // which causes some epsilon somewhere to claim the ray does not hit the
         // sampled light, which then causes a 0 probability.
 
-        if (pdf_sample < 0.0001) {
+
+        if (pdf_sample < 0.001) {
             pdf_sample = 1;
         }
     }
 
-    output += (rec.mat->eval(r, rec, srec) * rayColor(scattered, bounces + 1)) / pdf_sample;
+    Color sample_eval = rec.mat->eval(r, rec, srec);
+    output += (sample_eval * rayColor(scattered, bounces + 1)) / pdf_sample;
+
+    // Clamp the output value to reduce fireflies. This technique is not great because
+    // it introduces bias, but it does work
+    output = clamp(output, 0, MAX_SAMPLE_OUTPUT_COLOR);
 
     return output;
 }
