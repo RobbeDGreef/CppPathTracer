@@ -137,11 +137,7 @@ inline Vec3<T> normalize(Vec3<T> v)
 template <class T>
 inline Vec3<T> clamp(Vec3<T> v, double min, double max)
 {
-    for (int i = 0; i < 3; ++i)
-    {
-        v.set(i, clamp(v[i], min, max));
-    }
-    return v;
+    return Vec3<T>(clamp(v.x(), min, max), clamp(v.y(), min, max), clamp(v.z(), min, max));
 }
 
 template <class T>
@@ -186,4 +182,10 @@ template <class T>
 inline Vec3<T> fabs(Vec3<T> a)
 {
     return Vec3(fabs(a[0]), fabs(a[1]), fabs(a[2]));
+}
+
+template <class T>
+inline Vec3<T> pow(Vec3<T> a, double x)
+{
+    return Vec3<T>(pow(a.x(), x), pow(a.y(), x), pow(a.z(), x));
 }
