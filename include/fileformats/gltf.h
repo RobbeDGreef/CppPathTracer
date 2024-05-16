@@ -15,7 +15,7 @@ using json = nlohmann::json_abi_v3_11_3::json;
 #define GLTF_ACCESSOR_COMPTYPE_UINT     5125
 #define GLTF_ACCESSOR_COMPTYPE_FLOAT    5126
 
-#define GLTF_UNIT_TO_RT_UNIT 100
+#define GLTF_UNIT_TO_RT_UNIT 1
 
 /* todo: removeme, this is just to make my ide shut up */
 #ifndef PACKED
