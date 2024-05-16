@@ -19,7 +19,8 @@ public:
     Point3 min() const { return m_min; }
     Point3 max() const { return m_max; }
     double volume() const;
-    
+    double surfaceArea() const;
+
     bool hit(const Ray &ray, double t_min, double t_max, double &t) const;
     Point3 randomPointIn() const;
 

@@ -40,8 +40,16 @@ Point3 AABB::randomPointIn() const
 
 double AABB::volume() const
 {
-    Vec3<double> lengths = m_max - m_min;
+    auto lengths = m_max - m_min;
     return lengths[0] * lengths[1] * lengths[2];
+}
+
+double AABB::surfaceArea() const
+{
+    auto lengths = max() - min();
+    return (lengths[0] * lengths[1] * 2 +
+            lengths[2] * lengths[1] * 2 +
+            lengths[2] * lengths[0] * 2);
 }
 
 void AABB::scale(double scale)
