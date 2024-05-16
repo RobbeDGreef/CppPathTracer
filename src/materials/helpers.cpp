@@ -139,7 +139,7 @@ Color BRDFCookTorrance(const Direction v, const Direction l, const Direction n, 
     double ndotv = dot(n, v);
     double ndotl = dot(n, l);
 
-    Color F = schlickFresnel(F0, dot(v, h));
+    Color F = schlickFresnel(F0, fmax(dot(v, h), 0));
 
     Color ks = F;
     Color kd = Color(1) - ks;
