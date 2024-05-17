@@ -50,9 +50,9 @@ Point3 Obj::getVert(const std::string vert) const
     return m_verts[std::stoi(s) - 1];
 }
 
-Scene Obj::read()
+void Obj::read(Scene& scene)
 {
-    HitableList list;
+    HitableList& list = scene.getHitableList();
 
     //auto defmat = std::make_shared<Metal>(Color(0.9,0.9,0.9), 0.5);
     //auto defmat = std::make_shared<Lambertian>(std::make_shared<UVTexture>());
@@ -61,7 +61,7 @@ Scene Obj::read()
     if (!m_infile.is_open())
     {
         WARN("Returning empty HitableList.");
-        return list;
+        return;
     }
 
     std::string line;
@@ -86,6 +86,4 @@ Scene Obj::read()
         else if (parts.front() == "f")
             list.add(std::make_shared<Triangle>(getVert(parts[1]), getVert(parts[2]), getVert(parts[3]), defmat));
     }
-
-    return Scene(list);
 }

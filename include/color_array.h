@@ -5,12 +5,13 @@
 class ColorArray
 {
 private:
-    int m_width;
-    int m_height;
+    int m_width = 0;
+    int m_height = 0;
 
-    Color **m_array;
+    Color **m_array = nullptr;
 
 public:
+    ColorArray() {}
     ColorArray(int width, int height);
     ~ColorArray();
 

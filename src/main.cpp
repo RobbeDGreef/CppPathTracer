@@ -19,78 +19,105 @@
 #include <fileformats/obj.h>
 #include <fileformats/gltf.h>
 
-Renderer renderFastMaterialTestScene()
+#include <argparse/argparse.hpp>
+#include <thread>
+
+void setupFastCornellBenchmarkScene(Renderer &renderer)
 {
-    const double aspect_ratio = 16.0 / 9.0;
-    const int image_width = 800;
-    const int image_height = static_cast<int>(image_width / aspect_ratio);
+    renderer.set_background_color(Color(0.051, 0.051, 0.051));
+    renderer.set_dimensions(400, 400);
+    renderer.set_max_bounces(12);
+    renderer.set_samples_per_pixel(200);
 
-    Scene scene;
-    auto mat = std::make_shared<PBR>(std::make_shared<SolidColor>(1, 0, 0), 1, 0, 0, std::make_shared<SolidColor>(0), 0);
-    auto sphere = std::make_shared<Sphere>(Point3(0,0,0), 1, mat);
-    scene.getHitableList().add(sphere);
-
-
-    auto mat2 = std::make_shared<PBR>(std::make_shared<SolidColor>(1, 1, 1), 0.1, 1, 0, std::make_shared<SolidColor>(0), 0);
-    auto sphere2 = std::make_shared<Sphere>(Point3(-2.5, 0, 0), 1, mat2);
-    scene.getHitableList().add(sphere2);
-
-    // Light
-#if 1
-    auto emit = std::make_shared<PBR>(std::make_shared<SolidColor>(1), 0, 0, 0, std::make_shared<SolidColor>(1), 500);
-    auto lightSphere = std::make_shared<Sphere>(Point3(4, 2, 7), 0.5, emit);
-    scene.getHitableList().add(lightSphere);
-#else
-
-    auto light = std::make_shared<PointLight>(std::make_shared<SolidColor>(1, 1, 1), 10, 0.5, Point3(4, 2, 7));
-    scene.getLightList().push_back(light);
-#endif
-
-    Camera cam = Camera(Point3(0, 0, 5), Point3(0, 0, 0), aspect_ratio, 60, 0.00001);    
-    scene.setCamera(cam);
-
-    Renderer renderer(image_width, image_height, scene, Color(0.05, 0.05, 0.05));
-    renderer.render(500);
-    renderer.writeToFile("test.bmp");
-    return renderer;
+    GLTF gltf = GLTF("benchmarking/cornell/cornell_boxes.glb");
+    gltf.read(renderer.get_scene());
 }
 
-Renderer renderFastBenchmarkScene()
+void loadPreset(Renderer &renderer, std::string preset_name)
 {
-    const double aspect_ratio = 16.0 / 9.0;
-    const int image_width = 400;
-    const int image_height = static_cast<int>(image_width / aspect_ratio);
-
-    GLTF gltf = GLTF("benchmarking/3_balls.glb");
-    Scene scene = gltf.read();
-
-    Renderer renderer(image_width, image_height, scene, Color(0,0,0));
-    renderer.render(150);
-    renderer.writeToFile("test.bmp");
-    return renderer;
+    if (preset_name == "fast_cornell_benchmark")
+    {
+        setupFastCornellBenchmarkScene(renderer);
+    }
+    else
+    {
+        ERROR("Unknown preset " << preset_name);
+        exit(1);
+    }
 }
-
-Renderer renderFastCornellBenchmarkScene()
-{
-    const double aspect_ratio = 1;
-    const int image_width = 400;
-    const int image_height = static_cast<int>(image_width / aspect_ratio);
-
-    GLTF gltf = GLTF("benchmarking/cornell/cornell_boxes_3_balls.glb");
-    Scene scene = gltf.read();
-
-    Renderer renderer(image_width, image_height, scene, Color(0.051, 0.051, 0.051));
-    // TODO: BUG: high bounce counts introduce a lot of high pitched noise?
-    renderer.render(200, 50);
-    renderer.writeToFile("test.bmp");
-    return renderer;
-}
-
 
 int main(int argc, char **argv)
 {
-    //renderFastBenchmarkScene();
-    //renderFastMaterialTestScene();
-    renderFastCornellBenchmarkScene();
+    argparse::ArgumentParser program("Raytracer");
+    program.add_argument("-t", "--threads")
+        .default_value(static_cast<int>(std::thread::hardware_concurrency()))
+        .help("specify the amount of threads should be used")
+        .scan<'i', int>();
+
+    program.add_argument("-s", "--samples")
+        .default_value(200)
+        .help("specify the amount of samples per pixel should be performed")
+        .scan<'i', int>();
+
+    program.add_argument("--width")
+        .default_value(400)
+        .help("specify the width of the image")
+        .scan<'i', int>();
+
+    program.add_argument("--height")
+        .default_value(400)
+        .help("specify the height of the image")
+        .scan<'i', int>();
+
+    program.add_argument("-b", "--bounces")
+        .default_value(12)
+        .help("specify the maximal amount of ray bounces")
+        .scan<'i', int>();
+
+    program.add_argument("-o", "--outfile")
+        .default_value(std::string("out.bmp"))
+        .help("specify the file the output image needs to be written to (BMP format)")
+        .scan<'i', int>();
+
+    program.add_argument("--preset")
+        .help("specify a preset to run");
+
+    try
+    {
+        program.parse_args(argc, argv);
+    }
+    catch (const std::exception &err)
+    {
+        ERROR("Did not understand argument(s) " << err.what());
+        std::cerr << program;
+        return 1;
+    }
+
+    Renderer renderer = Renderer();
+    
+    int samples = program.get<int>("--samples");
+    int bounces = program.get<int>("--bounces");
+    int threads = program.get<int>("--threads");
+    int width = program.get<int>("--width");
+    int height = program.get<int>("--height");
+    auto preset = program.get<std::string>("--preset");
+
+    renderer.set_threads(threads);
+
+    if (program.present("--preset"))
+    {
+        loadPreset(renderer, program.get<std::string>("--preset"));
+    }
+    else
+    {
+        renderer.set_dimensions(width, height);
+        renderer.set_samples_per_pixel(samples);
+        renderer.set_max_bounces(bounces);
+    }
+
+    renderer.render();
+
+    std::string outfile = program.get("--outfile");
+    renderer.writeToFile(outfile);
     return 0;
 }

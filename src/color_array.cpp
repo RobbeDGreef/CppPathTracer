@@ -24,6 +24,8 @@ ColorArray::ColorArray(int width, int height)
 
 ColorArray::~ColorArray()
 {
+    if (m_array == nullptr) return;
+
     for (int i = 0; i < m_width; i++)
         delete[] m_array[i];
     

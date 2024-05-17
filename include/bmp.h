@@ -43,6 +43,6 @@ struct bmp_dib_hdr
 class Bmp
 {
 public:
-    static int write(ColorArray &color_array, std::string filename, int width, int height);
+    static int write(ColorArray *color_array, std::string filename, int width, int height);
     static std::shared_ptr<ColorArray> read(std::string filename);
 };

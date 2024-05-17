@@ -3,7 +3,7 @@
 // This code is a little ugly and pretty c style ish but
 // it will do for now.
 
-int Bmp::write(ColorArray &color_array, std::string filename, int width, int height)
+int Bmp::write(ColorArray *color_array, std::string filename, int width, int height)
 {
     std::ofstream output;
     output.open(filename, std::ios::out | std::ios::binary);
@@ -42,7 +42,7 @@ int Bmp::write(ColorArray &color_array, std::string filename, int width, int hei
     {
         for (int i = 0; i < width; i++)
         {
-            Color &color = color_array[i][j];
+            Color &color = color_array->at(i)[j];
             output.put(static_cast<char>(255.999 * color[2]));
             output.put(static_cast<char>(255.999 * color[1]));
             output.put(static_cast<char>(255.999 * color[0]));

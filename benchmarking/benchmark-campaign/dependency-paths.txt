@@ -1,1 +1,1 @@
-/home/robbe/opt/benchkit/
+/home/robbe/opt/benchkit

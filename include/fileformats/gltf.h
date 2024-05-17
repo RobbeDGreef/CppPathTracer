@@ -57,5 +57,5 @@ private:
 
 public:
     GLTF(std::string filename) : InputFileFormat(filename) {}
-    Scene read();
+    void read(Scene& scene);
 };

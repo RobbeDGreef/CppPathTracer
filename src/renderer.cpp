@@ -13,13 +13,37 @@
 #define RAY_FAR_CLIP inf
 #define MAX_SAMPLE_OUTPUT_COLOR 20
 
-Renderer::Renderer(int width, int height, Scene scene, Color bg)
-    : m_screen_buf(width, height),
-      m_world(scene.getHitableList()), m_scene(scene)
+void Renderer::set_dimensions(int width, int height)
 {
     m_width = width;
     m_height = height;
+
+    m_screen_buf = std::make_unique<ColorArray>(width, height);
+}
+
+void Renderer::generate_bvh()
+{
+    m_world = std::move(BvhNode(m_scene.getHitableList()));
+}
+
+void Renderer::set_background_color(Color bg)
+{
     m_background = bg;
+}
+
+void Renderer::set_threads(int threads)
+{
+    m_thread_amount = threads;
+}
+
+void Renderer::set_samples_per_pixel(int samples)
+{
+    m_samples_per_pixel = samples;
+}
+
+void Renderer::set_max_bounces(int max_bounces)
+{
+    m_max_bounces = max_bounces;
 }
 
 Color Renderer::rayColor(const Ray &r, int bounces = 0)
@@ -38,7 +62,7 @@ Color Renderer::rayColor(const Ray &r, int bounces = 0)
     // We did hit an object, now we calculate its color based on its material, the lights in the scene etc
     Ray scattered;
 
-    // The emitted function returns the amount of emission the material has, 
+    // The emitted function returns the amount of emission the material has,
     // if this is none, we assume the output variable is not changed and thus stays 0
     Color output = Color(0);
     rec.mat->emitted(rec.u, rec.v, rec.p, output);
@@ -55,7 +79,9 @@ Color Renderer::rayColor(const Ray &r, int bounces = 0)
     {
         scattered = srec.scattered_ray;
         pdf_sample = 1;
-    } else {
+    }
+    else
+    {
         // Evaluate the PDF to find the scatter direction
 
         auto light_pdf = std::make_shared<LightPDF>(rec.p, m_scene.getLightList().front());
@@ -68,16 +94,16 @@ Color Renderer::rayColor(const Ray &r, int bounces = 0)
 
         // If an extreme PDF value occurs it causes extreme values in the pixel
         // due to divisions by a very small number, in theory a good monte carlo
-        // simulation would still filter these out, however, the precision of 
-        // computers is holding us back here and we have to create some form of 
+        // simulation would still filter these out, however, the precision of
+        // computers is holding us back here and we have to create some form of
         // cutoff to make sure we dont cause these extreme pixels.
 
-        // This tends to happen when a bad direction is chosen by the LightPDF 
+        // This tends to happen when a bad direction is chosen by the LightPDF
         // which causes some epsilon somewhere to claim the ray does not hit the
         // sampled light, which then causes a 0 probability.
 
-
-        if (pdf_sample < 0.001) {
+        if (pdf_sample < 0.001)
+        {
             pdf_sample = 1;
         }
     }
@@ -135,20 +161,23 @@ void Renderer::renderThread(int thread_idx, double *percentages)
                 pixel_color += rayColor(r);
             }
             Color linear_color = pixel_color / m_samples_per_pixel;
-            Color gamma_corrected = pow(linear_color, 1.0/2.2);
-            m_screen_buf[i][j] = clamp(gamma_corrected, 0.0, 1.0);
+            Color gamma_corrected = pow(linear_color, 1.0 / 2.2);
+            m_screen_buf->at(i)[j] = clamp(gamma_corrected, 0.0, 1.0);
         }
     }
     OUT("thread " << thread_idx << " has finished");
 }
 
-int Renderer::render(int samples, int bounces)
+int Renderer::render()
 {
-    m_samples_per_pixel = samples;
-    m_max_bounces = bounces;
+    generate_bvh();
+
     auto start_chrono = std::chrono::high_resolution_clock::now();
 
     OUT("Rendering on " << m_thread_amount << " threads");
+    OUT("Image size: " << m_width << "x" << m_height);
+    OUT("Samples per pixel: " << m_samples_per_pixel);
+    OUT("Maximum ray bounces " << m_max_bounces);
 
     double *percentages = new double[m_thread_amount];
 
@@ -183,5 +212,5 @@ int Renderer::render(int samples, int bounces)
 
 int Renderer::writeToFile(std::string file)
 {
-    return Bmp::write(m_screen_buf, file, m_width, m_height);
+    return Bmp::write(m_screen_buf.get(), file, m_width, m_height);
 }

@@ -13,15 +13,10 @@ from benchkit.sharedlibs import SharedLib
 from benchkit.utils.types import CpuOrder, PathType, Environment    
 from benchkit.platforms import get_remote_platform
 
-class TestHook(PostRunHook):
-    def __call__(self, experiment_results_lines, record_data_dir, write_record_file_fun):
-        write_record_file_fun("Hello", "coolfile")
+FLAMEGRAPH_PATH = "/home/robbe/opt/FlameGraph"
+PRESET_SCENE = "fast_cornell_benchmark"
 
-class TestPreRunHook(PreRunHook):
-    def __call__(self, build_variables, run_variables, record_data_dir):
-        print("Yoooooo", run_variables)
-
-class CoolBenchmark(Benchmark):
+class RayTracerBenchmark(Benchmark):
     """Benchmark object for main benchmark."""
 
     def __init__(
@@ -59,7 +54,7 @@ class CoolBenchmark(Benchmark):
     def get_run_var_names() -> List[str]:
         return [
             "nb_threads",
-            "duration",
+            "preset",
         ]
 
     @staticmethod
@@ -84,7 +79,7 @@ class CoolBenchmark(Benchmark):
 
     def build_bench(self, **_kwargs) -> None:
         self.platform.comm.shell(
-            command=f"gcc -O3 -lpthread /home/pi/performance/wpo5/main.c -o /tmp/main",
+            command=f"./build.sh",
             current_dir=self._bench_src_path,
         )
 
@@ -93,18 +88,18 @@ class CoolBenchmark(Benchmark):
 
     def single_run(  # pylint: disable=arguments-differ
         self,
-        duration: int = 5,
+        preset: str,
         nb_threads: int = 2,
         **kwargs,
     ) -> str:
 
-        thread = f"-n {nb_threads}"
-        duration = f"-d {duration}"
+        threads = f"--threads {nb_threads}"
+        preset = f"--preset {preset}"
 
         run_command = [
-            "/tmp/main",
-            thread,
-            duration
+            "./raytracer",
+            threads,
+            preset,
         ]
 
         wrapped_run_command, wrapped_environment = self._wrap_command(
@@ -117,7 +112,7 @@ class CoolBenchmark(Benchmark):
             environment={},
             run_command=run_command,
             wrapped_run_command=wrapped_run_command,
-            current_dir=self._build_dir,
+            current_dir=self._bench_src_path,
             wrapped_environment=wrapped_environment,
             print_output=False,
         )
@@ -129,57 +124,52 @@ class CoolBenchmark(Benchmark):
         run_variables: Dict[str, Any],
         **_kwargs,
     ) -> Dict[str, Any]:
-        counter = int(command_output.split(": ")[1])
         nb_threads = int(run_variables["nb_threads"])
-        throughput = counter / int(run_variables['duration'])
-        return {"nb_threads": nb_threads, "counter": counter, "throughput": throughput}
+        duration = command_output.splitlines()[-1].split(": ")[1].split()[0]
+        return {"nb_threads": nb_threads, "duration": duration}
 
 
-def create_campaign(nb_threads: list[int], duration: int, nb_runs: int):
+def create_campaign(nb_threads: list[int], preset_scene: str, nb_runs: int, platform: Platform | None = None):
+    # The variables that have to be iterated through for the benchmark
     variables = {
         "nb_threads": nb_threads,
-        "duration": [duration]
+        "preset": [preset_scene],
     }
-    #perfstat_wrapper = PerfStatWrap(freq=1000, separator=";", events=["cache-misses"])
-    #wrapper = PerfReportWrap(flamegraph_path="./FlameGraph", freq=1000)
-    #strace_wrap = StraceWrap()
-    #env_wrap = EnvWrap()
-    benchmark = CoolBenchmark('.', '.', [
-        #wrapper,
-        #perfstat_wrapper,
-        #strace_wrap,
-        #env_wrap,
+
+    perfstat_wrapper = PerfStatWrap(freq=1000, separator=";", events=["cache-misses"])
+    wrapper = PerfReportWrap(flamegraph_path=FLAMEGRAPH_PATH, freq=1000)
+
+    benchmark = RayTracerBenchmark(src_dir='../../', build_dir='.', command_wrappers=[
+        wrapper,
+        perfstat_wrapper,
     ], 
-    platform=get_remote_platform("robbeandseppe.seppe.io"),
+    platform=platform,
     post_run_hooks=[
-        #wrapper.post_run_hook_flamegraph,
-        #perfstat_wrapper.post_run_hook_update_results,
-        TestHook()
-    ], pre_run_hooks=[
-        TestPreRunHook()
+        wrapper.post_run_hook_flamegraph,
+        perfstat_wrapper.post_run_hook_update_results,
     ])
 
-    wrapper = None
-    return wrapper, CampaignCartesianProduct(
-            name="cooltest",
+    return CampaignCartesianProduct(
+            name="Raytracer benchmark",
             benchmark=benchmark,
             nb_runs=nb_runs,
             variables=variables,
             gdb=False,
             debug=False,
             constants=None,
-            enable_data_dir=True,
-            continuing=False
-            )
+            enable_data_dir=True
+    )
 
-wrapper, campaign = create_campaign(nb_threads=[1, 2, 4], duration=5, nb_runs=3)
+
+platform = get_remote_platform("kot-robbe.ddns.net:2222")
+
+# rsync source code to the remote
+
+
+
+campaign = create_campaign(nb_threads=[8, 16], preset_scene=PRESET_SCENE, nb_runs=5, platform=platform)
 campaigns = [campaign]
 
 suite = CampaignSuite(campaigns=campaigns)
 suite.print_durations()
 suite.run_suite()
-
-suite.generate_graph(plot_name="scatterplot", x='nb_threads', y='throughput')
-#suite.generate_graph(plot_name="scatterplot", x='nb_threads', y='perf-stat/.unit')
-
-#wrapper.post_run_hook_flamegraph(experiment_results_lines=True, record_data_dir=True, write_record_file_fun=lambda file_content, filename: with open(filename, 'w+') as f: f.write())

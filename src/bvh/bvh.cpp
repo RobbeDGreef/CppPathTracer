@@ -6,7 +6,7 @@ bool BvhNode::hit(const Ray &ray, double t_min, double t_max, HitRecord &rec) co
     double t;
     if (!m_box.hit(ray, t_min, t_max, t))
         return false;
-
+    
     bool hit_left = m_left->hit(ray, t_min, t_max, rec);
     bool hit_right = m_right->hit(ray, t_min, hit_left ? rec.t : t_max, rec);
 

@@ -242,10 +242,8 @@ void GLTF::parseMeshNode(Scene &scene, json &node, json &file, char *bin_data)
     delete[] indices;
 }
 
-Scene GLTF::read()
+void GLTF::read(Scene& scene)
 {
-    Scene scene;
-
     GLTFHeader header;
     GLTFChunk chunk;
 
@@ -311,6 +309,4 @@ Scene GLTF::read()
             parseCameraNode(scene, node, file);
         }
     }
-
-    return scene;
 }

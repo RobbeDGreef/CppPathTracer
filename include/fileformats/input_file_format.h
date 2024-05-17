@@ -11,5 +11,5 @@ protected:
 public:
     InputFileFormat(std::ifstream stream);
     InputFileFormat(std::string filename);
-    Scene read();
+    void read(Scene& scene);
 };
