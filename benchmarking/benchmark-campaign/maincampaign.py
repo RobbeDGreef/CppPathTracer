@@ -10,11 +10,13 @@ from benchkit.commandwrappers.perf import PerfReportWrap, PerfStatWrap
 from benchkit.dependencies.packages import PackageDependency
 from benchkit.platforms import Platform
 from benchkit.sharedlibs import SharedLib
-from benchkit.utils.types import CpuOrder, PathType, Environment    
+from benchkit.utils.types import CpuOrder, PathType, Environment
 from benchkit.platforms import get_remote_platform
 
 FLAMEGRAPH_PATH = "/home/robbe/opt/FlameGraph"
-PRESET_SCENE = "fast_cornell_benchmark"
+PRESET_SCENE = "suzanne"
+RUN_REMOTELY = True
+
 
 class RayTracerBenchmark(Benchmark):
     """Benchmark object for main benchmark."""
@@ -22,13 +24,14 @@ class RayTracerBenchmark(Benchmark):
     def __init__(
         self,
         src_dir: PathType,
-        build_dir: PathType | None = None,
+        bench_src_dir: PathType | None = None,
+        copy_src_to_build: bool = False,
         command_wrappers: Iterable[CommandWrapper] = [],
         command_attachments: Iterable[CommandAttachment] = [],
         shared_libs: Iterable[SharedLib] = [],
         pre_run_hooks: Iterable[PreRunHook] = [],
         post_run_hooks: Iterable[PostRunHook] = [],
-        platform: Platform = None
+        platform: Platform = None,
     ) -> None:
         super().__init__(
             command_wrappers=command_wrappers,
@@ -37,10 +40,43 @@ class RayTracerBenchmark(Benchmark):
             pre_run_hooks=pre_run_hooks,
             post_run_hooks=post_run_hooks,
         )
-        self._build_dir = build_dir
-        self._bench_src_path = src_dir
+        self._src_dir = src_dir
+        self._bench_src_path = bench_src_dir
         if platform is not None:
             self.platform = platform
+
+        # If this is on a remote machine, copy the source to the remote machine
+        if not copy_src_to_build:
+            return
+        
+        # We need trailing slashes to make sure the directories are not copied in each other and
+        # rather the files are synced between the directories
+        src = pathlib.Path(self._src_dir)
+        dst = pathlib.Path(self._bench_src_path)
+
+        folders_to_copy = [
+            "src",
+            "include",
+            "benchmarking/cornell"
+        ]
+
+        files_to_copy = [
+            "build.sh",
+            "CMakeLists.txt",
+            "custom_config.h",
+            "benchmarking/suzanne_on_table.glb"
+        ]
+
+
+        # If you want to copy a folder, you need to append it with a leading / to make sure
+        # that the contents are not copied and that the folders are not copied into each other.
+        # Since pathlib does not support this (it auto strips trailing slashes), you have
+        # to add them manually.
+        for folder in folders_to_copy:
+            self.platform.comm.copy_from_host(f"{src / folder}/", f"{dst / folder}/")
+
+        for file in files_to_copy:
+            self.platform.comm.copy_from_host(f"{src / file}", f"{dst / file}")
 
     @property
     def bench_src_path(self) -> pathlib.Path:
@@ -48,7 +84,7 @@ class RayTracerBenchmark(Benchmark):
 
     @staticmethod
     def get_build_var_names() -> List[str]:
-        return []
+        return ["threading_implementation", "use_color_buffer_per_thread"]
 
     @staticmethod
     def get_run_var_names() -> List[str]:
@@ -77,9 +113,26 @@ class RayTracerBenchmark(Benchmark):
     def prebuild_bench(self, **kwargs):
         pass
 
-    def build_bench(self, **_kwargs) -> None:
+    def build_bench(
+        self,
+        threading_implementation: List[int],
+        use_color_buffer_per_thread: List[int],
+        **_kwargs,
+    ) -> None:
+
+        # Create the config file that sets the build parameters
+        custom_config = "#pragma once\n"
+        custom_config += f"#define THREAD_IMPLEMENTATION {threading_implementation}\n"
+        custom_config += (
+            f"#define USE_COLOR_BUFFER_PER_THREAD {use_color_buffer_per_thread}\n"
+        )
+
+        self.platform.comm.write_content_to_file(
+            custom_config, pathlib.Path(self._bench_src_path) / "custom_config.h"
+        )
+
         self.platform.comm.shell(
-            command=f"./build.sh",
+            command="./build.sh",
             current_dir=self._bench_src_path,
         )
 
@@ -93,12 +146,11 @@ class RayTracerBenchmark(Benchmark):
         **kwargs,
     ) -> str:
 
-        threads = f"--threads {nb_threads}"
-        preset = f"--preset {preset}"
-
         run_command = [
             "./raytracer",
-            threads,
+            "--threads",
+            str(nb_threads),
+            "--preset",
             preset,
         ]
 
@@ -125,51 +177,85 @@ class RayTracerBenchmark(Benchmark):
         **_kwargs,
     ) -> Dict[str, Any]:
         nb_threads = int(run_variables["nb_threads"])
-        duration = command_output.splitlines()[-1].split(": ")[1].split()[0]
+        try:
+            duration = command_output.splitlines()[-1].split(": ")[1].split()[0]
+        except Exception:
+            print(command_output)
+            duration = "N/A"
+
         return {"nb_threads": nb_threads, "duration": duration}
 
 
-def create_campaign(nb_threads: list[int], preset_scene: str, nb_runs: int, platform: Platform | None = None):
-    # The variables that have to be iterated through for the benchmark
-    variables = {
-        "nb_threads": nb_threads,
-        "preset": [preset_scene],
-    }
-
+def create_campaign(
+    variables: Dict[str, List[str]],
+    copy_src_to_build: bool,
+    nb_runs: int,
+    source_dir: str,
+    bench_src_dir: str,
+    platform: Platform | None = None,
+):
     perfstat_wrapper = PerfStatWrap(freq=1000, separator=";", events=["cache-misses"])
     wrapper = PerfReportWrap(flamegraph_path=FLAMEGRAPH_PATH, freq=1000)
 
-    benchmark = RayTracerBenchmark(src_dir='../../', build_dir='.', command_wrappers=[
-        wrapper,
-        perfstat_wrapper,
-    ], 
-    platform=platform,
-    post_run_hooks=[
-        wrapper.post_run_hook_flamegraph,
-        perfstat_wrapper.post_run_hook_update_results,
-    ])
+    benchmark = RayTracerBenchmark(
+        src_dir=source_dir,
+        copy_src_to_build=copy_src_to_build,
+        bench_src_dir=bench_src_dir,
+        command_wrappers=[
+            #    wrapper,
+            #    perfstat_wrapper,
+        ],
+        platform=platform,
+        post_run_hooks=[
+            #    wrapper.post_run_hook_flamegraph,
+            #    perfstat_wrapper.post_run_hook_update_results,
+        ],
+    )
 
     return CampaignCartesianProduct(
-            name="Raytracer benchmark",
-            benchmark=benchmark,
-            nb_runs=nb_runs,
-            variables=variables,
-            gdb=False,
-            debug=False,
-            constants=None,
-            enable_data_dir=True
+        name="Raytracer_benchmark",
+        benchmark=benchmark,
+        nb_runs=nb_runs,
+        variables=variables,
+        gdb=False,
+        debug=False,
+        constants=None,
+        enable_data_dir=True,
     )
 
 
-platform = get_remote_platform("kot-robbe.ddns.net:2222")
+def main():
+    source_dir = "../.."
+    bench_src_dir = "../.."
+    platform = None
+    copy_src_to_build = False
 
-# rsync source code to the remote
+    if RUN_REMOTELY:
+        platform = get_remote_platform("ssh://root@94.105.105.81:2222")
+        bench_src_dir = "/tmp/CppPathTracer"
+        copy_src_to_build = True
 
+    # The variables that have to be iterated through for the benchmark
+    variables = {
+        "nb_threads": [16],
+        "preset": [PRESET_SCENE],
+        "threading_implementation": [2],
+        "use_color_buffer_per_thread": [0, 1],
+    }
 
+    campaign = create_campaign(
+        variables=variables,
+        copy_src_to_build=copy_src_to_build,
+        nb_runs=7,
+        source_dir=source_dir,
+        bench_src_dir=bench_src_dir,
+        platform=platform,
+    )
+    campaigns = [campaign]
 
-campaign = create_campaign(nb_threads=[8, 16], preset_scene=PRESET_SCENE, nb_runs=5, platform=platform)
-campaigns = [campaign]
+    suite = CampaignSuite(campaigns=campaigns)
+    suite.print_durations()
+    suite.run_suite()
 
-suite = CampaignSuite(campaigns=campaigns)
-suite.print_durations()
-suite.run_suite()
+if __name__ == "__main__":
+    main()
