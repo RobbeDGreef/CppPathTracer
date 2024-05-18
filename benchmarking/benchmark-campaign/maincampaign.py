@@ -14,8 +14,20 @@ from benchkit.utils.types import CpuOrder, PathType, Environment
 from benchkit.platforms import get_remote_platform
 
 FLAMEGRAPH_PATH = "/home/robbe/opt/FlameGraph"
-PRESET_SCENE = "suzanne"
 RUN_REMOTELY = True
+
+# See below where variables are specified on why these variables are necessary
+BUILD_VARIABLES = [
+    "threading_implementation",
+    "use_color_buffer_per_thread",
+    "use_slim_bvh_nodes",
+    "triangle_intersection_algo",
+]
+RUN_VARIABLES = ["nb_threads", "preset"]
+
+
+class ForgetFullException(Exception):
+    pass
 
 
 class RayTracerBenchmark(Benchmark):
@@ -48,25 +60,21 @@ class RayTracerBenchmark(Benchmark):
         # If this is on a remote machine, copy the source to the remote machine
         if not copy_src_to_build:
             return
-        
+
         # We need trailing slashes to make sure the directories are not copied in each other and
         # rather the files are synced between the directories
         src = pathlib.Path(self._src_dir)
         dst = pathlib.Path(self._bench_src_path)
 
-        folders_to_copy = [
-            "src",
-            "include",
-            "benchmarking/cornell"
-        ]
+        folders_to_copy = ["src", "include", "benchmarking/cornell"]
 
         files_to_copy = [
             "build.sh",
             "CMakeLists.txt",
             "custom_config.h",
-            "benchmarking/suzanne_on_table.glb"
+            "benchmarking/suzanne_on_table.glb",
+            "benchmarking/suzanne_on_table_hr.glb",
         ]
-
 
         # If you want to copy a folder, you need to append it with a leading / to make sure
         # that the contents are not copied and that the folders are not copied into each other.
@@ -84,14 +92,11 @@ class RayTracerBenchmark(Benchmark):
 
     @staticmethod
     def get_build_var_names() -> List[str]:
-        return ["threading_implementation", "use_color_buffer_per_thread"]
+        return BUILD_VARIABLES
 
     @staticmethod
     def get_run_var_names() -> List[str]:
-        return [
-            "nb_threads",
-            "preset",
-        ]
+        return RUN_VARIABLES
 
     @staticmethod
     def get_tilt_var_names() -> List[str]:
@@ -113,19 +118,11 @@ class RayTracerBenchmark(Benchmark):
     def prebuild_bench(self, **kwargs):
         pass
 
-    def build_bench(
-        self,
-        threading_implementation: List[int],
-        use_color_buffer_per_thread: List[int],
-        **_kwargs,
-    ) -> None:
-
+    def build_bench(self, **kwargs) -> None:
         # Create the config file that sets the build parameters
         custom_config = "#pragma once\n"
-        custom_config += f"#define THREAD_IMPLEMENTATION {threading_implementation}\n"
-        custom_config += (
-            f"#define USE_COLOR_BUFFER_PER_THREAD {use_color_buffer_per_thread}\n"
-        )
+        for v in BUILD_VARIABLES:
+            custom_config += f"#define {v.upper()} {kwargs.get(v)}\n"
 
         self.platform.comm.write_content_to_file(
             custom_config, pathlib.Path(self._bench_src_path) / "custom_config.h"
@@ -194,21 +191,21 @@ def create_campaign(
     bench_src_dir: str,
     platform: Platform | None = None,
 ):
-    perfstat_wrapper = PerfStatWrap(freq=1000, separator=";", events=["cache-misses"])
-    wrapper = PerfReportWrap(flamegraph_path=FLAMEGRAPH_PATH, freq=1000)
+    perfstat_wrapper = PerfStatWrap(freq=1000, separator=";", events=["cache-misses", "branch-misses"])
+    perfreport_wrapper = PerfReportWrap(flamegraph_path=FLAMEGRAPH_PATH, freq=1000)
 
     benchmark = RayTracerBenchmark(
         src_dir=source_dir,
         copy_src_to_build=copy_src_to_build,
         bench_src_dir=bench_src_dir,
         command_wrappers=[
-            #    wrapper,
-            #    perfstat_wrapper,
+            #    perfreport_wrapper,
+            perfstat_wrapper,
         ],
         platform=platform,
         post_run_hooks=[
-            #    wrapper.post_run_hook_flamegraph,
-            #    perfstat_wrapper.post_run_hook_update_results,
+            #    perfreport_wrapper.post_run_hook_flamegraph,
+            perfstat_wrapper.post_run_hook_update_results,
         ],
     )
 
@@ -238,15 +235,28 @@ def main():
     # The variables that have to be iterated through for the benchmark
     variables = {
         "nb_threads": [16],
-        "preset": [PRESET_SCENE],
+        "preset": ["fast_cornell_benchmark", "suzanne"],
         "threading_implementation": [2],
-        "use_color_buffer_per_thread": [0, 1],
+        "use_color_buffer_per_thread": [0],
+        "use_slim_bvh_nodes": [0],
+        "triangle_intersection_algo": [1, 2],
     }
+
+    # This is just as a safety to make sure the variables specified
+    # and passed to the cartesian product below are actually all used
+    # in the benchmark.
+    # Why? I am forgetfull and I wasted like 2 benchmark hours because
+    # of
+    for v in variables.keys():
+        if v not in BUILD_VARIABLES + RUN_VARIABLES:
+            raise ForgetFullException(
+                "You forgot to use the variables set here in the benchmark"
+            )
 
     campaign = create_campaign(
         variables=variables,
         copy_src_to_build=copy_src_to_build,
-        nb_runs=7,
+        nb_runs=5,
         source_dir=source_dir,
         bench_src_dir=bench_src_dir,
         platform=platform,
@@ -256,6 +266,7 @@ def main():
     suite = CampaignSuite(campaigns=campaigns)
     suite.print_durations()
     suite.run_suite()
+
 
 if __name__ == "__main__":
     main()
