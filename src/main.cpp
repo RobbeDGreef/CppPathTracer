@@ -33,11 +33,28 @@ void setupFastCornellBenchmarkScene(Renderer &renderer)
     gltf.read(renderer.get_scene());
 }
 
+void setupSuzanneOnTableBenchmarkScene(Renderer &renderer)
+{
+    const int width = 800;
+    renderer.set_background_color(Color(0.051, 0.051, 0.051));
+    renderer.set_dimensions(width, width*((double)9 / 16));
+    renderer.set_max_bounces(12);
+    renderer.set_samples_per_pixel(200);
+
+    GLTF gltf = GLTF("benchmarking/suzanne_on_table_hr.glb");
+    gltf.read(renderer.get_scene());
+}
+
+
 void loadPreset(Renderer &renderer, std::string preset_name)
 {
     if (preset_name == "fast_cornell_benchmark")
     {
         setupFastCornellBenchmarkScene(renderer);
+    }
+    else if (preset_name == "suzanne")
+    {
+        setupSuzanneOnTableBenchmarkScene(renderer);
     }
     else
     {

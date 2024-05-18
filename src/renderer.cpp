@@ -1,17 +1,21 @@
 #include <renderer.h>
-#include <bmp.h>
-#include <hitables/hitable.h>
 #include <random.h>
-#include <materials/material.h>
-#include <chrono>
+#include <bmp.h>
 #include <core.h>
 #include <scene.h>
+#include <config.h>
+
+#include <hitables/hitable.h>
+#include <materials/material.h>
 #include <pdfs/lightpdf.h>
 #include <pdfs/mixturepdf.h>
 
+#include <omp.h>
+
+#include <chrono>
+
 #define RAY_NEAR_CLIP 0.001
 #define RAY_FAR_CLIP inf
-#define MAX_SAMPLE_OUTPUT_COLOR 20
 
 void Renderer::set_dimensions(int width, int height)
 {
@@ -118,6 +122,23 @@ Color Renderer::rayColor(const Ray &r, int bounces = 0)
     return output;
 }
 
+void Renderer::renderPixel(ColorArray *array, int x, int y)
+{
+    Color pixel_color;
+    for (int s = 0; s < m_samples_per_pixel; ++s)
+    {
+        double x_coord = ((double)x + randomGen.getDouble()) / (m_width - 1);
+        double y_coord = ((double)y + randomGen.getDouble()) / (m_height - 1);
+        const Ray r = m_scene.getCamera().sendRay(x_coord, y_coord);
+        pixel_color += rayColor(r);
+    }
+    Color linear_color = pixel_color / m_samples_per_pixel;
+    Color gamma_corrected = pow(linear_color, 1.0 / 2.2);
+    array->at(x)[y] = clamp(gamma_corrected, 0.0, 1.0);
+}
+
+#if THREAD_IMPLEMENTATION == THREAD_IMPL_NAIVE
+
 void Renderer::calcProgress(double *percentages)
 {
     double cnt = 0;
@@ -136,7 +157,7 @@ void Renderer::calcProgress(double *percentages)
     }
 }
 
-void Renderer::renderThread(int thread_idx, double *percentages)
+void Renderer::renderThread(ColorArray* buffer, int thread_idx, double *percentages)
 {
     int work = m_height / m_thread_amount;
     int extra = 0;
@@ -152,33 +173,50 @@ void Renderer::renderThread(int thread_idx, double *percentages)
 
         for (int i = 0; i < m_width; ++i)
         {
-            Color pixel_color;
-            for (int s = 0; s < m_samples_per_pixel; ++s)
-            {
-                double x = ((double)i + randomGen.getDouble()) / (m_width - 1);
-                double y = ((double)j + randomGen.getDouble()) / (m_height - 1);
-                Ray r = m_scene.getCamera().sendRay(x, y);
-                pixel_color += rayColor(r);
-            }
-            Color linear_color = pixel_color / m_samples_per_pixel;
-            Color gamma_corrected = pow(linear_color, 1.0 / 2.2);
-            m_screen_buf->at(i)[j] = clamp(gamma_corrected, 0.0, 1.0);
+            renderPixel(buffer, i, j);
         }
     }
     OUT("thread " << thread_idx << " has finished");
 }
 
+#endif
+
+#if THREAD_IMPLEMENTATION == THREAD_IMPL_OPENMP
+
+void Renderer::renderBlock(ColorArray *buffer, RenderWorkBlock work)
+{
+    for (int y = work.y; y < work.y_end; ++y)
+    {
+        for (int x = work.x; x < work.x_end; ++x)
+        {
+            renderPixel(buffer, x, y);
+        }
+    }
+}
+
+#endif
+
 int Renderer::render()
 {
+    // First generate the acceleration structure
     generate_bvh();
-
-    auto start_chrono = std::chrono::high_resolution_clock::now();
 
     OUT("Rendering on " << m_thread_amount << " threads");
     OUT("Image size: " << m_width << "x" << m_height);
     OUT("Samples per pixel: " << m_samples_per_pixel);
     OUT("Maximum ray bounces " << m_max_bounces);
 
+    auto start_chrono = std::chrono::high_resolution_clock::now();
+
+#if USE_COLOR_BUFFER_PER_THREAD
+    std::vector<std::unique_ptr<ColorArray>> buffers;
+    for (int i = 0; i < m_thread_amount; i++)
+    {
+        buffers.push_back(std::make_unique<ColorArray>(m_width, m_height));
+    }
+#endif
+
+#if THREAD_IMPLEMENTATION == THREAD_IMPL_NAIVE
     double *percentages = new double[m_thread_amount];
 
     // This multithreading approach is not great, we divide the work in
@@ -190,23 +228,130 @@ int Renderer::render()
     std::thread *threads = new std::thread[m_thread_amount];
     for (int i = 0; i < m_thread_amount; i++)
     {
-        threads[i] = std::thread(&Renderer::renderThread, this, i, percentages);
+
+#if USE_COLOR_BUFFER_PER_THREAD
+            ColorArray *buffer = buffers[i].get();
+#else
+            ColorArray *buffer = m_screen_buf.get();
+#endif
+
+        threads[i] = std::thread(&Renderer::renderThread, this, buffer, i, percentages);
     }
 
+#if ENABLE_PROGRESS_INDICATOR
     // Display the progress
     std::thread(&Renderer::calcProgress, this, percentages).detach();
+#endif
 
     for (int i = 0; i < m_thread_amount; i++)
     {
         threads[i].join();
     }
 
-    auto stop_chrono = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop_chrono - start_chrono);
-    DEBUG("Rendering done, took: " << (double)duration.count() / 1000 << " seconds");
-
     delete[] percentages;
     delete[] threads;
+
+#endif
+
+#if THREAD_IMPLEMENTATION == THREAD_IMPL_OPENMP
+
+    // Divide the work up into squares of computation and create a
+    // queue where threads can take work out of
+
+    std::queue<RenderWorkBlock> work;
+    for (int x = 0; x < m_width; x += WORK_SQUARE_SIZE)
+    {
+        for (int y = 0; y < m_height; y += WORK_SQUARE_SIZE)
+        {
+            int width = x + WORK_SQUARE_SIZE >= m_width ? (m_width - x - 1) : WORK_SQUARE_SIZE;
+            int height = y + WORK_SQUARE_SIZE >= m_height ? (m_height - y - 1) : WORK_SQUARE_SIZE;
+
+            work.push(RenderWorkBlock{x, y, x + width, y + height});
+        }
+    }
+
+    int total_work = work.size();
+    RenderWorkQueue work_queue(work);
+
+#if ENABLE_PROGRESS_INDICATOR
+    std::thread progress([&]()
+                         {
+        int size = work_queue.size();
+        while ((size = work_queue.size()) != 0)
+        {
+            OUT((1 - (double)size / total_work)*100 << "% completed");
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        } });
+    progress.detach();
+#endif
+
+    // Launch some parallel instances of the raytracing algorithm
+    omp_set_num_threads(m_thread_amount);
+#pragma omp parallel
+    {
+        // Initialize the random generator for each thread
+        // This randomgen is stored in thread local storage.-
+        randomGen = RandomGenerator();
+
+        std::optional<RenderWorkBlock> work = work_queue.pop();
+        while (work.has_value())
+        {
+
+#if USE_COLOR_BUFFER_PER_THREAD
+            int thread = omp_get_thread_num();
+            ColorArray *buffer = buffers[thread].get();
+#else
+            ColorArray *buffer = m_screen_buf.get();
+#endif
+
+            renderBlock(buffer, work.value());
+
+            work = work_queue.pop();
+        }
+    }
+
+#endif
+
+#if THREAD_IMPLEMENTATION == THREAD_IMPL_OPENMP_FULL
+
+    omp_set_num_threads(m_thread_amount);
+    #pragma omp parallel for collapse(2)
+    for (int y = 0; y < m_height; ++y)
+    {
+        for (int x = 0; x < m_width; ++x)
+        {
+
+#if USE_COLOR_BUFFER_PER_THREAD
+            int thread = omp_get_thread_num();
+            ColorArray *buffer = buffers[thread].get();
+#else
+            ColorArray *buffer = m_screen_buf.get();
+#endif
+
+            renderPixel(buffer, x, y);
+        }
+    }
+
+#endif
+
+#if USE_COLOR_BUFFER_PER_THREAD
+    // Merge the final buffers
+    for (int x = 0; x < m_width; x++)
+    {
+        for (int y = 0; y < m_height; y++)
+        {
+            for (auto &&buf : buffers)
+            {
+                m_screen_buf->at(x)[y] += buf->at(x)[y];
+            }
+        }
+    }
+#endif
+
+    auto stop_chrono = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop_chrono - start_chrono);
+    OUT("Rendering done, took: " << (double)duration.count() / 1000 << " seconds");
+
     return 0;
 }
 
