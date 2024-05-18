@@ -51,7 +51,7 @@ public:
     double nearplane() const { return m_near_plane; }
     double farplane() const { return m_far_plane; }
 
-    Ray sendRay(double x, double y)
+    Ray sendRay(double x, double y) const
     {
         Point3 rd = m_aperature / 2 * randomGen.getPoint3InUnitDisk();
         Point3 offset = rd.x() * m_u + rd.y() * m_v;
