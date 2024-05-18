@@ -1,6 +1,52 @@
 #include <hitables/triangle.h>
 #include <random.h>
 #include <core.h>
+#include <config.h>
+
+#if TRIANGLE_INTERSECTION_ALGO == TRIANGLE_INTERSECTION_CRAMMER
+
+inline double det3x3(Direction &a, Direction &b, Direction &c)
+{
+    const double a00 = a[0], a01 = a[1], a02 = a[2];
+    const double a10 = b[0], a11 = b[1], a12 = b[2];
+    const double a20 = c[0], a21 = c[1], a22 = c[2];
+    return a00 * (a22 * a11 - a12 * a21) +
+           a01 * (-a22 * a10 + a12 * a20) +
+           a02 * (a21 * a10 - a11 * a20);
+}
+
+bool Triangle::hit(const Ray &r, double t_min, double t_max, HitRecord &rec) const
+{
+    const double epsilon = 0.0000001;
+
+    // This is essentially branchless Möller Trumbore.
+    // See https://x.com/lisyarus/status/1786327676120117683/photo/2
+    Point3 hit;
+
+    Direction dir = r.direction();
+    Direction edge1 = m_points[0] - m_points[1];
+    Direction edge2 = m_points[0] - m_points[2];
+    Direction rhs = m_points[0] - r.origin();
+
+    double d = det3x3(dir, edge1, edge2);
+    double t = det3x3(rhs, edge1, edge2) / d;
+    double u = det3x3(dir, rhs, edge2) / d;
+    double v = det3x3(dir, edge1, rhs) / d;
+
+    bool backfaced = dot(edge1, cross(dir, edge2)) < epsilon;
+
+    rec.p = r.at(t);
+    rec.t = t;
+    rec.u = u;
+    rec.v = v;
+    rec.mat = material();
+    rec.set_face_normal(r, normalize(cross(edge1, edge2)));
+
+    return (!backfaced || m_doublesided) && t >= 0.0 && u >= 0.0 && v >= 0.0 && u + v <= 1.0;
+}
+#endif
+
+#if TRIANGLE_INTERSECTION_ALGO == TRIANGLE_INTERSECTION_MOLLER_TRUMBORE
 
 bool Triangle::hit(const Ray &r, double t_min, double t_max, HitRecord &rec) const
 {
@@ -53,6 +99,8 @@ bool Triangle::hit(const Ray &r, double t_min, double t_max, HitRecord &rec) con
 
     return true;
 }
+
+#endif
 
 bool Triangle::boundingBox(AABB &bounding_box) const
 {
