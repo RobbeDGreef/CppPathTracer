@@ -78,7 +78,7 @@ private:
     void renderThread(ColorArray* buffer, int thread_idx, double *percentage);
     void calcProgress(double *percentages);
 #endif
-#if THREAD_IMPLEMENTATION == THREAD_IMPL_OPENMP
+#if THREAD_IMPLEMENTATION == THREAD_IMPL_OPENMP_BLOCKS
     void renderBlock(ColorArray* buffer, RenderWorkBlock work);
 #endif
 

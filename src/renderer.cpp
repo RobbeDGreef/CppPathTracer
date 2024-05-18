@@ -181,7 +181,7 @@ void Renderer::renderThread(ColorArray* buffer, int thread_idx, double *percenta
 
 #endif
 
-#if THREAD_IMPLEMENTATION == THREAD_IMPL_OPENMP
+#if THREAD_IMPLEMENTATION == THREAD_IMPL_OPENMP_BLOCKS
 
 void Renderer::renderBlock(ColorArray *buffer, RenderWorkBlock work)
 {
@@ -253,7 +253,7 @@ int Renderer::render()
 
 #endif
 
-#if THREAD_IMPLEMENTATION == THREAD_IMPL_OPENMP
+#if THREAD_IMPLEMENTATION == THREAD_IMPL_OPENMP_BLOCKS
 
     // Divide the work up into squares of computation and create a
     // queue where threads can take work out of
@@ -312,7 +312,7 @@ int Renderer::render()
 
 #endif
 
-#if THREAD_IMPLEMENTATION == THREAD_IMPL_OPENMP_FULL
+#if THREAD_IMPLEMENTATION == THREAD_IMPL_OPENMP_PER_PIXEL
 
     omp_set_num_threads(m_thread_amount);
     #pragma omp parallel for collapse(2)

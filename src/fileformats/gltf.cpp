@@ -222,6 +222,7 @@ void GLTF::parseMeshNode(Scene &scene, json &node, json &file, char *bin_data)
     auto list = std::make_shared<HitableList>();
     for (size_t i = 0; i < indices_count; i += 3)
     {
+
         auto triangle = std::make_shared<Triangle>(
             positions[indices[i + 0]].toPoint3() * GLTF_UNIT_TO_RT_UNIT,
             positions[indices[i + 1]].toPoint3() * GLTF_UNIT_TO_RT_UNIT,

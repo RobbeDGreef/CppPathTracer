@@ -43,19 +43,19 @@ Point3 Obj::getVert(const std::string vert) const
         s = vert.substr(0, idx);
     else
         s = vert;
-    
+
     // @todo: check bounds to make sure we actually have this index
-    
+
     // Vertex indices start at 1
     return m_verts[std::stoi(s) - 1];
 }
 
-void Obj::read(Scene& scene)
+void Obj::read(Scene &scene)
 {
-    HitableList& list = scene.getHitableList();
+    HitableList &list = scene.getHitableList();
 
-    //auto defmat = std::make_shared<Metal>(Color(0.9,0.9,0.9), 0.5);
-    //auto defmat = std::make_shared<Lambertian>(std::make_shared<UVTexture>());
+    // auto defmat = std::make_shared<Metal>(Color(0.9,0.9,0.9), 0.5);
+    // auto defmat = std::make_shared<Lambertian>(std::make_shared<UVTexture>());
     auto defmat = std::make_shared<PBR>(std::make_shared<SolidColor>(0.8, 0.1, 0.1), 1, 0, 0, std::make_shared<SolidColor>(0), 0);
 
     if (!m_infile.is_open())
@@ -66,11 +66,11 @@ void Obj::read(Scene& scene)
 
     std::string line;
     std::vector<std::string> parts;
-    parts.reserve(5); // most will not be larger than this so we reduce size increases. 
+    parts.reserve(5); // most will not be larger than this so we reduce size increases.
     while (!m_infile.eof())
     {
         std::getline(m_infile, line);
-        
+
         // Skip over comments and empty lines
         if (line.size() == 0 || line.front() == '#')
             continue;
@@ -81,9 +81,13 @@ void Obj::read(Scene& scene)
 
         // @todo: make sure the parts vector is actually large enough for vector parsing
         if (parts.front() == "v")
+        {
             m_verts.push_back(parseVec(parts, 1));
-
+        }
         else if (parts.front() == "f")
-            list.add(std::make_shared<Triangle>(getVert(parts[1]), getVert(parts[2]), getVert(parts[3]), defmat));
+        {
+            auto triangle = std::make_shared<Triangle>(getVert(parts[1]), getVert(parts[2]), getVert(parts[3]), defmat);
+            list.add(triangle);
+        }
     }
 }
