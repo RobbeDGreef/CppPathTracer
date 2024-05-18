@@ -19,7 +19,7 @@ ColorArray::ColorArray(int width, int height)
     m_array = new Color*[width];
 
     for (int i = 0; i < width; i++)
-        m_array[i] = new Color[height];
+        m_array[i] = new Color[height]();
 }
 
 ColorArray::~ColorArray()
