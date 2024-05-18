@@ -115,7 +115,7 @@ inline Vec3<T> operator/(Vec3<T> x, double v)
 }
 
 template <class T>
-inline double dot(const Vec3<T> &x, const Vec3<T> &y)
+inline T dot(const Vec3<T> &x, const Vec3<T> &y)
 {
     return x.x() * y.x() + x.y() * y.y() + x.z() * y.z();
 }
@@ -188,4 +188,10 @@ template <class T>
 inline Vec3<T> pow(Vec3<T> a, double x)
 {
     return Vec3<T>(pow(a.x(), x), pow(a.y(), x), pow(a.z(), x));
+}
+
+template <class T>
+static inline T det(Vec3<T> a, Vec3<T> b, Vec3<T> c)
+{
+    return dot(a, cross(b, c));
 }
