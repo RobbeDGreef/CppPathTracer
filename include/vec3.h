@@ -115,6 +115,12 @@ inline Vec3<T> operator/(Vec3<T> x, double v)
 }
 
 template <class T>
+inline Vec3<T> operator/(double x, Vec3<T> v)
+{
+    return Vec3<T>(x / v.x(), x / v.y(), x / v.z());
+}
+
+template <class T>
 inline T dot(const Vec3<T> &x, const Vec3<T> &y)
 {
     return x.x() * y.x() + x.y() * y.y() + x.z() * y.z();
@@ -150,26 +156,28 @@ inline Vec3<T> sqrt(Vec3<T> v)
     return v;
 }
 
-inline Vec3<double> minValues(Point3 x, Point3 y)
+template <class T>
+inline Vec3<T> minValues(Vec3<T> a, Vec3<T> b)
 {
-    Point3 ret;
-    for (int i = 0; i < 3; i++)
-    {
-        ret.set(i, fmin(x[i], y[i]));
-    }
-
-    return ret;
+    return Vec3<T>(std::min(a[0], b[0]), std::min(a[1], b[1]), std::min(a[2], b[2]));
 }
 
-inline Vec3<double> maxValues(Point3 x, Point3 y)
+template <class T>
+inline Vec3<T> maxValues(Vec3<T> a, Vec3<T> b)
 {
-    Point3 ret;
-    for (int i = 0; i < 3; i++)
-    {
-        ret.set(i, fmax(x[i], y[i]));
-    }
+    return Vec3<T>(std::max(a[0], b[0]), std::max(a[1], b[1]), std::max(a[2], b[2]));
+}
 
-    return ret;
+template <class T>
+inline T minVal(Vec3<T> x)
+{
+    return std::min(x[0], std::min(x[1], x[2]));
+}
+
+template <class T>
+inline T maxVal(Vec3<T> x)
+{
+    return std::max(x[0], std::max(x[1], x[2]));
 }
 
 template <class T>
