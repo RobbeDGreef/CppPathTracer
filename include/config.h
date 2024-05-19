@@ -10,8 +10,8 @@
 #define TRIANGLE_INTERSECTION_MOLLER_TRUMBORE   1
 #define TRIANGLE_INTERSECTION_CRAMMER           2
 
-#if __has_include("../../custom_config.h")
-#include "../../custom_config.h"
+#if __has_include("../custom_config.h")
+#include "../custom_config.h"
 #endif
 
 #ifndef WORK_SQUARE_SIZE
