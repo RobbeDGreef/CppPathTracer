@@ -280,7 +280,7 @@ int Renderer::render()
         while ((size = work_queue.size()) != 0)
         {
             OUT((1 - (double)size / total_work)*100 << "% completed");
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(3000));
         } });
     progress.detach();
 #endif
