@@ -3,8 +3,7 @@
 
 bool BvhNode::hit(const Ray &ray, double t_min, double t_max, HitRecord &rec) const
 {
-    double t;
-    if (!m_box.hit(ray, t_min, t_max, t))
+    if (!m_box.hit(ray, t_min, t_max))
         return false;
     
     bool hit_left = m_left->hit(ray, t_min, t_max, rec);
@@ -21,7 +20,7 @@ static bool hitableCompare(HitablePtr &a, HitablePtr &b, int axis)
     if (!a->boundingBox(a_box) || !b->boundingBox(b_box))
         ERROR("No bounding box could be constructed in the BVH");
 
-    return a_box.min()[axis] < a_box.min()[axis];
+    return a_box.minPoint()[axis] < a_box.minPoint()[axis];
 }
 
 BvhNode::BvhNode(const std::vector<HitablePtr> &_objects, int start, int end)

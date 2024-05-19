@@ -5,7 +5,7 @@ Point3 Hitable::randomPointIn() const
 {
     AABB box;
     this->boundingBox(box);
-    return randomGen.getPoint3() * (box.max() - box.min()) + box.min();
+    return randomGen.getPoint3() * (box.maxPoint() - box.minPoint()) + box.minPoint();
 }
 
 double Hitable::pdf(const Ray &r) const

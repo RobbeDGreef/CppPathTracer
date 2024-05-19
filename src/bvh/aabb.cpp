@@ -9,8 +9,8 @@ bool AABB::hit(const Ray &ray, double t_min, double t_max, double &t) const
     for (int i = 0; i < 3; i++)
     {
         double inverted_d = 1.0 / ray.direction()[i];
-        double t0 = (min()[i] - ray.origin()[i]) * inverted_d;
-        double t1 = (max()[i] - ray.origin()[i]) * inverted_d;
+        double t0 = (minPoint()[i] - ray.origin()[i]) * inverted_d;
+        double t1 = (maxPoint()[i] - ray.origin()[i]) * inverted_d;
 
         if (inverted_d < 0.0)
             std::swap(t0, t1);
@@ -30,7 +30,7 @@ bool AABB::hit(const Ray &ray, double t_min, double t_max, double &t) const
 
 AABB AABB::surroundingBox(AABB &b0, AABB &b1)
 {
-    return AABB(minValues(b0.min(), b1.min()), maxValues(b0.max(), b1.max()));
+    return AABB(minValues(b0.minPoint(), b1.minPoint()), maxValues(b0.maxPoint(), b1.maxPoint()));
 }
 
 Point3 AABB::randomPointIn() const
@@ -46,7 +46,7 @@ double AABB::volume() const
 
 double AABB::surfaceArea() const
 {
-    auto lengths = max() - min();
+    auto lengths = maxPoint() - minPoint();
     return (lengths[0] * lengths[1] * 2 +
             lengths[2] * lengths[1] * 2 +
             lengths[2] * lengths[0] * 2);

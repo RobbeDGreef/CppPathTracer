@@ -16,12 +16,12 @@ public:
 
     void scale(double scale);
 
-    Point3 min() const { return m_min; }
-    Point3 max() const { return m_max; }
+    Point3 minPoint() const { return m_min; }
+    Point3 maxPoint() const { return m_max; }
     double volume() const;
     double surfaceArea() const;
 
-    bool hit(const Ray &ray, double t_min, double t_max, double &t) const;
+    bool hit(const Ray &ray, double t_min, double t_max) const;
     Point3 randomPointIn() const;
 
     // static
