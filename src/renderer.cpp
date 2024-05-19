@@ -137,7 +137,7 @@ void Renderer::renderPixel(ColorArray *array, int x, int y)
     array->at(x)[y] = clamp(gamma_corrected, 0.0, 1.0);
 }
 
-#if THREAD_IMPLEMENTATION == THREAD_IMPL_NAIVE
+#if THREADING_IMPLEMENTATION == THREAD_IMPL_NAIVE
 
 void Renderer::calcProgress(double *percentages)
 {
@@ -181,7 +181,7 @@ void Renderer::renderThread(ColorArray* buffer, int thread_idx, double *percenta
 
 #endif
 
-#if THREAD_IMPLEMENTATION == THREAD_IMPL_OPENMP_BLOCKS
+#if THREADING_IMPLEMENTATION == THREAD_IMPL_OPENMP_BLOCKS
 
 void Renderer::renderBlock(ColorArray *buffer, RenderWorkBlock work)
 {
@@ -216,7 +216,7 @@ int Renderer::render()
     }
 #endif
 
-#if THREAD_IMPLEMENTATION == THREAD_IMPL_NAIVE
+#if THREADING_IMPLEMENTATION == THREAD_IMPL_NAIVE
     double *percentages = new double[m_thread_amount];
 
     // This multithreading approach is not great, we divide the work in
@@ -253,7 +253,7 @@ int Renderer::render()
 
 #endif
 
-#if THREAD_IMPLEMENTATION == THREAD_IMPL_OPENMP_BLOCKS
+#if THREADING_IMPLEMENTATION == THREAD_IMPL_OPENMP_BLOCKS
 
     // Divide the work up into squares of computation and create a
     // queue where threads can take work out of
@@ -312,7 +312,7 @@ int Renderer::render()
 
 #endif
 
-#if THREAD_IMPLEMENTATION == THREAD_IMPL_OPENMP_PER_PIXEL
+#if THREADING_IMPLEMENTATION == THREAD_IMPL_OPENMP_PER_PIXEL
 
     omp_set_num_threads(m_thread_amount);
     #pragma omp parallel for collapse(2)

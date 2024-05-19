@@ -74,11 +74,11 @@ private:
     void generate_bvh();
 
     void renderPixel(ColorArray* array, int x, int y);
-#if THREAD_IMPLEMENTATION == THREAD_IMPL_NAIVE
+#if THREADING_IMPLEMENTATION == THREAD_IMPL_NAIVE
     void renderThread(ColorArray* buffer, int thread_idx, double *percentage);
     void calcProgress(double *percentages);
 #endif
-#if THREAD_IMPLEMENTATION == THREAD_IMPL_OPENMP_BLOCKS
+#if THREADING_IMPLEMENTATION == THREAD_IMPL_OPENMP_BLOCKS
     void renderBlock(ColorArray* buffer, RenderWorkBlock work);
 #endif
 
