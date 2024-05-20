@@ -33,13 +33,12 @@ void setupFastCornellBenchmarkScene(Renderer &renderer)
     gltf.read(renderer.get_scene());
 }
 
-void setupSuzanneOnTableBenchmarkScene(Renderer &renderer)
+void setupSuzanneOnTableBenchmarkScene(Renderer &renderer, int width=800, int samples=200)
 {
-    const int width = 800;
     renderer.set_background_color(Color(0.051, 0.051, 0.051));
     renderer.set_dimensions(width, width*((double)9 / 16));
     renderer.set_max_bounces(12);
-    renderer.set_samples_per_pixel(200);
+    renderer.set_samples_per_pixel(samples);
 
     GLTF gltf = GLTF("benchmarking/suzanne_on_table_hr.glb");
     gltf.read(renderer.get_scene());
@@ -48,19 +47,15 @@ void setupSuzanneOnTableBenchmarkScene(Renderer &renderer)
 
 void loadPreset(Renderer &renderer, std::string preset_name)
 {
-    if (preset_name == "fast_cornell_benchmark")
-    {
-        setupFastCornellBenchmarkScene(renderer);
-    }
-    else if (preset_name == "suzanne")
-    {
-        setupSuzanneOnTableBenchmarkScene(renderer);
-    }
-    else
-    {
-        ERROR("Unknown preset " << preset_name);
-        exit(1);
-    }
+    if (preset_name == "fast_cornell_benchmark") 
+        return setupFastCornellBenchmarkScene(renderer);
+    if (preset_name == "suzanne")
+        return setupSuzanneOnTableBenchmarkScene(renderer);
+    if (preset_name == "suzanne_fast")
+        return setupSuzanneOnTableBenchmarkScene(renderer, 500);
+
+    ERROR("Unknown preset " << preset_name);
+    exit(1);
 }
 
 int main(int argc, char **argv)
@@ -93,8 +88,7 @@ int main(int argc, char **argv)
 
     program.add_argument("-o", "--outfile")
         .default_value(std::string("out.bmp"))
-        .help("specify the file the output image needs to be written to (BMP format)")
-        .scan<'i', int>();
+        .help("specify the file the output image needs to be written to (BMP format)");
 
     program.add_argument("--preset")
         .help("specify a preset to run");

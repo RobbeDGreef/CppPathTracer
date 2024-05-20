@@ -2,6 +2,7 @@
 
 #include <hitables/hitable.h>
 #include <hitables/hitable_list.h>
+#include <config.h>
 
 class BvhNode : public Hitable
 {
@@ -17,8 +18,10 @@ public:
 
     BvhNode(const std::vector<HitablePtr> &objects, int start, int end);
 
-    bool is_uninitialized() const { return m_left.get() == nullptr || m_right.get() == nullptr; }
-
+    bool is_uninitialized() const
+    {
+        return m_left.get() == nullptr || m_right.get() == nullptr;
+    }
     bool hit(const Ray &r, double t_min, double t_max, HitRecord &rec) const override;
     bool boundingBox(AABB &bounding_box) const override;
 };

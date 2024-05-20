@@ -22,6 +22,8 @@ BUILD_VARIABLES = [
     "use_color_buffer_per_thread",
     "use_slim_bvh_nodes",
     "triangle_intersection_algo",
+    "work_square_size",
+    "aabb_hit_implementation"
 ]
 RUN_VARIABLES = ["nb_threads", "preset"]
 
@@ -138,6 +140,7 @@ class RayTracerBenchmark(Benchmark):
 
     def single_run(  # pylint: disable=arguments-differ
         self,
+        record_data_dir: PathType,
         preset: str,
         nb_threads: int = 2,
         **kwargs,
@@ -149,11 +152,15 @@ class RayTracerBenchmark(Benchmark):
             str(nb_threads),
             "--preset",
             preset,
+            "--outfile",
+            str(record_data_dir / "benchmark.bmp"),
+
         ]
 
         wrapped_run_command, wrapped_environment = self._wrap_command(
             run_command=run_command,
             environment={},
+            record_data_dir=record_data_dir,
             **kwargs,
         )
 
@@ -164,6 +171,7 @@ class RayTracerBenchmark(Benchmark):
             current_dir=self._bench_src_path,
             wrapped_environment=wrapped_environment,
             print_output=False,
+            record_data_dir=record_data_dir,
         )
         return output
 
@@ -233,13 +241,16 @@ def main():
         copy_src_to_build = True
 
     # The variables that have to be iterated through for the benchmark
+
     variables = {
         "nb_threads": [16],
-        "preset": ["fast_cornell_benchmark", "suzanne"],
-        "threading_implementation": [2],
+        "preset": ["suzanne"],
+        "threading_implementation": [3],
         "use_color_buffer_per_thread": [0],
         "use_slim_bvh_nodes": [0],
-        "triangle_intersection_algo": [1, 2],
+        "triangle_intersection_algo": [1],
+        "work_square_size": [1],
+        "aabb_hit_implementation": [3],
     }
 
     # This is just as a safety to make sure the variables specified
