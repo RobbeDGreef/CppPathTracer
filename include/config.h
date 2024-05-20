@@ -10,6 +10,10 @@
 #define TRIANGLE_INTERSECTION_MOLLER_TRUMBORE   1
 #define TRIANGLE_INTERSECTION_CRAMMER           2
 
+#define AABB_HIT_NAIVE              1
+#define AABB_HIT_BRANCHLESS         2
+#define AABB_HIT_BRANCHLESS_VECTOR  3
+
 #if __has_include("../custom_config.h")
 #include "../custom_config.h"
 #endif
@@ -40,4 +44,8 @@
 
 #ifndef TRIANGLE_INTERSECTION_ALGO
 #define TRIANGLE_INTERSECTION_ALGO TRIANGLE_INTERSECTION_MOLLER_TRUMBORE
+#endif
+
+#ifndef AABB_HIT_IMPLEMENTATION
+#define AABB_HIT_IMPLEMENTATION AABB_HIT_NAIVE
 #endif
