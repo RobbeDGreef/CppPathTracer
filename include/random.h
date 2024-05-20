@@ -117,13 +117,13 @@ public:
         return min + (max - min) * getDouble();
     }
 
-    Vec3<double> getVec3Double()
+    Vec3d getVec3Double()
     {
-        return Vec3<double>(getDouble(), getDouble(), getDouble());
+        return Vec3d(getDouble(), getDouble(), getDouble());
     }
-    Vec3<double> getVec3Double(double min, double max)
+    Vec3d getVec3Double(double min, double max)
     {
-        return Vec3<double>(getDouble(min, max), getDouble(min, max), getDouble(min, max));
+        return Vec3d(getDouble(min, max), getDouble(min, max), getDouble(min, max));
     }
 
     Point3 getPoint3()

@@ -77,6 +77,7 @@ public:
 using Point3 = Vec3<double>;
 using Color = Vec3<double>;
 using Direction = Vec3<double>;
+using Vec3d = Vec3<double>;
 
 template <class T>
 inline Vec3<T> operator+(const Vec3<T> &x, const Vec3<T> &y)
@@ -121,7 +122,7 @@ inline Vec3<T> operator/(double x, Vec3<T> v)
 }
 
 template <class T>
-inline T dot(const Vec3<T> &x, const Vec3<T> &y)
+T dot(const Vec3<T> &x, const Vec3<T> &y)
 {
     return x.x() * y.x() + x.y() * y.y() + x.z() * y.z();
 }
