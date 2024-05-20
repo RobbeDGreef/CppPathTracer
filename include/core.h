@@ -12,6 +12,8 @@
 #include <thread>
 #include <functional>
 
+#include <config.h>
+
 #include <debug.h>
 
 #if defined(__GNUC__) || defined(__clang__)
