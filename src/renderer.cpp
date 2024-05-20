@@ -27,7 +27,11 @@ void Renderer::set_dimensions(int width, int height)
 
 void Renderer::generate_bvh()
 {
-    m_world = std::move(BvhNode(m_scene.getHitableList()));
+    auto start_chrono = std::chrono::high_resolution_clock::now();
+    m_world = BvhManager(m_scene.getHitableList(), m_width, m_height, m_samples_per_pixel);
+    auto stop_chrono = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop_chrono - start_chrono);
+    OUT("BVH generation done, took: " << (double)duration.count() / 1000 << " seconds");
 }
 
 void Renderer::set_background_color(Color bg)
