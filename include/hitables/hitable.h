@@ -7,6 +7,9 @@
 #include <sampleable.h>
 
 class Material;
+class Hitable;
+using HitablePtr = Hitable*;
+
 
 class HitRecord
 {
@@ -18,6 +21,7 @@ public:
     std::shared_ptr<Material> mat;
     double u;
     double v;
+    Hitable const * hitable;
 
     inline void set_face_normal(const Ray &ray, const Direction outward_normal)
     {
@@ -36,5 +40,3 @@ public:
     virtual Point3 randomPointIn() const override;
     virtual double pdf(const Ray& r) const override;
 };
-
-using HitablePtr = std::shared_ptr<Hitable>;

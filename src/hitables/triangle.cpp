@@ -23,15 +23,20 @@ bool Triangle::hit(const Ray &r, double t_min, double t_max, HitRecord &rec) con
     // See https://x.com/lisyarus/status/1786327676120117683/photo/2
     Point3 hit;
 
+    // TODO: FUTURE ROBBE:
+    // This algorithm is wrong, which causes the runtimes to be rediculous, I suspect the normals to be pointed outwards
+
     Direction dir = r.direction();
     Direction edge1 = m_points[0] - m_points[1];
     Direction edge2 = m_points[0] - m_points[2];
     Direction rhs = m_points[0] - r.origin();
 
     double d = det3x3(dir, edge1, edge2);
-    double t = det3x3(rhs, edge1, edge2) / d;
-    double u = det3x3(dir, rhs, edge2) / d;
-    double v = det3x3(dir, edge1, rhs) / d;
+    double inv_d = 1.0 / d;
+
+    double t = det3x3(rhs, edge1, edge2) * inv_d;
+    double u = det3x3(dir, rhs, edge2) * inv_d;
+    double v = det3x3(dir, edge1, rhs) * inv_d;
 
     bool backfaced = dot(edge1, cross(dir, edge2)) < epsilon;
 
@@ -95,6 +100,7 @@ bool Triangle::hit(const Ray &r, double t_min, double t_max, HitRecord &rec) con
     rec.u = u;
     rec.v = v;
     rec.mat = material();
+    rec.hitable = this;
     rec.set_face_normal(r, normalize(cross(edge1, edge2)));
 
     return true;

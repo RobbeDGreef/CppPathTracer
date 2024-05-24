@@ -93,9 +93,9 @@ double AABB::volume() const
 double AABB::surfaceArea() const
 {
     auto lengths = maxPoint() - minPoint();
-    return (lengths[0] * lengths[1] * 2 +
-            lengths[2] * lengths[1] * 2 +
-            lengths[2] * lengths[0] * 2);
+    return (lengths[0] * lengths[1] +
+            lengths[2] * lengths[1] +
+            lengths[2] * lengths[0]) * 2.0;
 }
 
 void AABB::scale(double scale)
@@ -108,4 +108,14 @@ void AABB::scale(double scale)
 
     m_min += difference / 2;
     m_max = m_min + scaled_diff;
+}
+
+AABB::AABB(const std::vector<HitablePtr>& objects)
+{
+    objects.front()->boundingBox(*this);
+    for (const HitablePtr& hitable : objects) {
+        AABB obj;
+        hitable->boundingBox(obj);
+        *this = AABB::surroundingBox(*this, obj);
+    }
 }

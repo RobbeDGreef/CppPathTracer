@@ -166,6 +166,12 @@ void GLTF::parseMeshNode(Scene &scene, json &node, json &file, char *bin_data)
     // All values in the primitives json object are indices into the accessor array
     primitives["attributes"]["POSITION"].get_to(positions_accessor_idx);
     primitives["indices"].get_to(indices_accessor_idx);
+
+    if (!primitives.contains("material"))
+    {
+        ERROR("GLTF contains an object without a material applied to it");
+        exit(1);
+    }
     primitives["material"].get_to(material_idx);
 
     // All data from accessors is stored in the binary part of this file.
@@ -223,7 +229,7 @@ void GLTF::parseMeshNode(Scene &scene, json &node, json &file, char *bin_data)
     for (size_t i = 0; i < indices_count; i += 3)
     {
 
-        auto triangle = std::make_shared<Triangle>(
+        auto triangle = new Triangle(
             positions[indices[i + 0]].toPoint3() * GLTF_UNIT_TO_RT_UNIT,
             positions[indices[i + 1]].toPoint3() * GLTF_UNIT_TO_RT_UNIT,
             positions[indices[i + 2]].toPoint3() * GLTF_UNIT_TO_RT_UNIT,

@@ -66,11 +66,12 @@ private:
 
     std::unique_ptr<ColorArray> m_screen_buf;
 
-    BvhNode m_world;
+    BvhManager m_world;
     Scene m_scene;
 
 private:
-    Color rayColor(const Ray &r, int bounces);
+    Color rayColor(const Ray &r, int bounce, int x, int y, int sample);
+
     void generate_bvh();
 
     void renderPixel(ColorArray* array, int x, int y);

@@ -54,17 +54,30 @@ void Renderer::set_max_bounces(int max_bounces)
     m_max_bounces = max_bounces;
 }
 
-Color Renderer::rayColor(const Ray &r, int bounces = 0)
+Color Renderer::rayColor(const Ray &r, int bounces, int x, int y, int sample)
 {
     if (bounces == m_max_bounces)
         return Color(0);
 
     // If we do not hit anything with this ray, we return the background color / texture
     HitRecord rec;
-    if (!m_world.hit(r, RAY_NEAR_CLIP, RAY_FAR_CLIP, rec))
+#if BVH_FIRST_HIT_CACHING
+    if (bounces == 0)
     {
-        // TODO: implement HDRI
-        return m_background;
+        if (!m_world.cachedHit(x, y, sample, r, RAY_NEAR_CLIP, RAY_FAR_CLIP, rec))
+        {
+            // TODO: implement HDRI
+            return m_background;
+        }
+    }
+    else
+#endif
+    {
+        if (!m_world.hit(r, RAY_NEAR_CLIP, RAY_FAR_CLIP, rec))
+        {
+            // TODO: implement HDRI
+            return m_background;
+        }
     }
 
     // We did hit an object, now we calculate its color based on its material, the lights in the scene etc
@@ -117,7 +130,7 @@ Color Renderer::rayColor(const Ray &r, int bounces = 0)
     }
 
     Color sample_eval = rec.mat->eval(r, rec, srec);
-    output += (sample_eval * rayColor(scattered, bounces + 1)) / pdf_sample;
+    output += (sample_eval * rayColor(scattered, bounces + 1, x, y, sample)) / pdf_sample;
 
     // Clamp the output value to reduce fireflies. This technique is not great because
     // it introduces bias, but it does work
@@ -134,7 +147,7 @@ void Renderer::renderPixel(ColorArray *array, int x, int y)
         double x_coord = ((double)x + randomGen.getDouble()) / (m_width - 1);
         double y_coord = ((double)y + randomGen.getDouble()) / (m_height - 1);
         const Ray r = m_scene.getCamera().sendRay(x_coord, y_coord);
-        pixel_color += rayColor(r);
+        pixel_color += rayColor(r, 0, x, y, s);
     }
     Color linear_color = pixel_color / m_samples_per_pixel;
     Color gamma_corrected = pow(linear_color, 1.0 / 2.2);
@@ -161,7 +174,7 @@ void Renderer::calcProgress(double *percentages)
     }
 }
 
-void Renderer::renderThread(ColorArray* buffer, int thread_idx, double *percentages)
+void Renderer::renderThread(ColorArray *buffer, int thread_idx, double *percentages)
 {
     int work = m_height / m_thread_amount;
     int extra = 0;
@@ -234,9 +247,9 @@ int Renderer::render()
     {
 
 #if USE_COLOR_BUFFER_PER_THREAD
-            ColorArray *buffer = buffers[i].get();
+        ColorArray *buffer = buffers[i].get();
 #else
-            ColorArray *buffer = m_screen_buf.get();
+        ColorArray *buffer = m_screen_buf.get();
 #endif
 
         threads[i] = std::thread(&Renderer::renderThread, this, buffer, i, percentages);
@@ -319,7 +332,7 @@ int Renderer::render()
 #if THREADING_IMPLEMENTATION == THREAD_IMPL_OPENMP_PER_PIXEL
 
     omp_set_num_threads(m_thread_amount);
-    #pragma omp parallel for collapse(2)
+#pragma omp parallel for collapse(2)
     for (int y = 0; y < m_height; ++y)
     {
         for (int x = 0; x < m_width; ++x)

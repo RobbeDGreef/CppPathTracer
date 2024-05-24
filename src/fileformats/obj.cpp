@@ -86,7 +86,7 @@ void Obj::read(Scene &scene)
         }
         else if (parts.front() == "f")
         {
-            auto triangle = std::make_shared<Triangle>(getVert(parts[1]), getVert(parts[2]), getVert(parts[3]), defmat);
+            auto triangle = new Triangle(getVert(parts[1]), getVert(parts[2]), getVert(parts[3]), defmat);
             list.add(triangle);
         }
     }

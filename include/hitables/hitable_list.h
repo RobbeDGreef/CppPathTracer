@@ -13,6 +13,7 @@ private:
 public:
     HitableList() {}
     HitableList(HitablePtr object) { add(object); }
+    HitableList(const std::vector<HitablePtr>& objects) : m_objects(objects) {}
 
     void add(std::shared_ptr<HitableList> object)
     {
