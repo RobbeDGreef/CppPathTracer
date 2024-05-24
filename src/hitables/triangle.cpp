@@ -158,3 +158,8 @@ double Triangle::pdf(const Ray &r) const
 
     return 1.0 / area;
 }
+
+Point3 Triangle::center() const
+{
+    return (m_points[0] + m_points[1] + m_points[2]) / 3.0;
+}

@@ -29,6 +29,7 @@ public:
 class Hitable : public Sampleable
 {
 public:
+    virtual Point3 center() const { return 0; };
     virtual bool hit(const Ray &r, double t_min, double t_max, HitRecord &rec) const = 0;
     virtual bool boundingBox(AABB &bounding_box) const = 0;
 
