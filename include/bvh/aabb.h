@@ -4,6 +4,9 @@
 #include <ray.h>
 #include <sampleable.h>
 
+class Hitable;
+using HitablePtr = Hitable*;
+
 class AABB
 {
 private:
@@ -13,6 +16,7 @@ private:
 public:
     AABB() {}
     AABB(const Point3 &min, const Point3 &max) : m_min(min), m_max(max) {}
+    AABB(const std::vector<HitablePtr>& objects);
 
     void scale(double scale);
 
