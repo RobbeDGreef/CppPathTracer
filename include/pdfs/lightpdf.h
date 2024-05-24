@@ -32,10 +32,9 @@ public:
 
         //double pdf = 1.0 / box.volume();
 
-        // I am really not sure about this *2 in the pdf, this is kinda a hack because there
+        // I am really not sure about this *4 in the pdf, this is kinda a hack because there
         // is too little light falloff.
-        // I am not even sure about sampling the surface area and not the volume.
-        double pdf = 1.0 / box.surfaceArea() * 2;
+        double pdf = 1.0 / box.surfaceArea() * 4;
 #else
         double pdf = m_hitable_list->pdf(r);
 #endif
