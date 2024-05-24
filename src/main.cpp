@@ -22,37 +22,31 @@
 #include <argparse/argparse.hpp>
 #include <thread>
 
-void setupFastCornellBenchmarkScene(Renderer &renderer)
+void setupGLTFBenchmarkScene(Renderer &renderer, std::string path, int width=800, double aspect_ratio=1, int samples=200)
 {
     renderer.set_background_color(Color(0.051, 0.051, 0.051));
-    renderer.set_dimensions(400, 400);
-    renderer.set_max_bounces(12);
-    renderer.set_samples_per_pixel(200);
-
-    GLTF gltf = GLTF("benchmarking/cornell/cornell_boxes.glb");
-    gltf.read(renderer.get_scene());
-}
-
-void setupSuzanneOnTableBenchmarkScene(Renderer &renderer, int width=800, int samples=200)
-{
-    renderer.set_background_color(Color(0.051, 0.051, 0.051));
-    renderer.set_dimensions(width, width*((double)9 / 16));
+    renderer.set_dimensions(width, width*aspect_ratio);
     renderer.set_max_bounces(12);
     renderer.set_samples_per_pixel(samples);
 
-    GLTF gltf = GLTF("benchmarking/suzanne_on_table_hr.glb");
+    GLTF gltf = GLTF(path);
     gltf.read(renderer.get_scene());
 }
-
 
 void loadPreset(Renderer &renderer, std::string preset_name)
 {
     if (preset_name == "fast_cornell_benchmark") 
-        return setupFastCornellBenchmarkScene(renderer);
+        return setupGLTFBenchmarkScene(renderer, "benchmarking/cornell/cornell_boxes.glb");
     if (preset_name == "suzanne")
-        return setupSuzanneOnTableBenchmarkScene(renderer);
+        return setupGLTFBenchmarkScene(renderer, "benchmarking/suzanne_on_table_hr.glb");
+    if (preset_name == "suzanne_big")
+        return setupGLTFBenchmarkScene(renderer, "benchmarking/suzanne_on_table_hr.glb", 1920, 9.0/16.0, 500);
     if (preset_name == "suzanne_fast")
-        return setupSuzanneOnTableBenchmarkScene(renderer, 500);
+        return setupGLTFBenchmarkScene(renderer, "benchmarking/suzanne_on_table_hr.glb", 500);
+    if (preset_name == "stanford_dragon")
+        return setupGLTFBenchmarkScene(renderer, "benchmarking/stanford-dragon.glb", 1200, 9.0/16.0, 500);
+    if (preset_name == "stanford_dragon_glass")
+        return setupGLTFBenchmarkScene(renderer, "benchmarking/stanford-dragon-glass.glb", 800, 9.0/16.0, 500);
 
     ERROR("Unknown preset " << preset_name);
     exit(1);
