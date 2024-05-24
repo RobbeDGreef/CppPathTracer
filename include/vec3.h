@@ -55,7 +55,7 @@ public:
     bool isNearZero() const
     {
         const double s = 1e-8;
-        return (fabs(e[0]) < s) && (fabs(e[1]) < s) && (fabs(e[2]) < s);
+        return (std::abs(e[0]) < s) && (std::abs(e[1]) < s) && (std::abs(e[2]) < s);
     }
 
     double length() const
@@ -144,7 +144,7 @@ inline Vec3<T> normalize(Vec3<T> v)
 template <class T>
 inline Vec3<T> clamp(Vec3<T> v, double min, double max)
 {
-    return Vec3<T>(clamp(v.x(), min, max), clamp(v.y(), min, max), clamp(v.z(), min, max));
+    return Vec3<T>(std::clamp(v.x(), min, max), std::clamp(v.y(), min, max), std::clamp(v.z(), min, max));
 }
 
 template <class T>
