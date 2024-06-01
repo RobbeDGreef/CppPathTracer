@@ -35,7 +35,7 @@ double calculateSplitCost(const std::vector<HitablePtr> &objects, int axis, doub
 
     for (auto it = objects.begin(); it != objects.end(); ++it)
     {
-        const auto& hitable = *it;
+        const auto &hitable = *it;
         if (hitable->center()[axis] < pos)
         {
             left_count++;
@@ -68,20 +68,20 @@ HitablePtr BvhNode::createTree(const std::vector<HitablePtr> &objects, BvhManage
     // Parent box is AABB of all nodes in this tree
     AABB parent_box = AABB(objects);
 
-    // Find the best split, it is possible that not splitting is 
-    // better, this will mean that the cost of the parent box is 
+    // Find the best split, it is possible that not splitting is
+    // better, this will mean that the cost of the parent box is
     // lower than any cost of a split.
     double best_cost = parent_box.surfaceArea() * objects.size();
     double best_pos = 0;
     int best_axis = -1;
 
-    // For every axis check all objects to find the best possible 
+    // For every axis check all objects to find the best possible
     // split
     for (int axis = 0; axis < 3; axis++)
     {
         double begin = parent_box.minPoint()[axis];
         double end = parent_box.maxPoint()[axis];
-        double interval = (end-begin) / 10;
+        double interval = (end - begin) / 10;
         for (double pos = begin; pos < end; pos += interval)
         {
             double cost = calculateSplitCost(objects, axis, pos);
@@ -102,22 +102,23 @@ HitablePtr BvhNode::createTree(const std::vector<HitablePtr> &objects, BvhManage
     }
 
     // Otherwise split the BVH into two nodes
-    
+
     // Preallocate the left and right objects list with enough spaces
     // for all the objects. This is a wasteful usage of memory, but it
     // is faster this way.
     std::vector<HitablePtr> left_objects;
     std::vector<HitablePtr> right_objects;
 
-    for (const auto& obj : objects) {
+    for (const auto &obj : objects)
+    {
         if (obj->center()[best_axis] < best_pos)
             left_objects.push_back(obj);
-        else 
+        else
             right_objects.push_back(obj);
     }
 
-    BvhNode* out = new(manager.allocate_node()) BvhNode();
-    
+    BvhNode *out = new (manager.allocate_node()) BvhNode();
+
     out->m_box = parent_box;
     out->m_left = createTree(left_objects, manager);
     out->m_right = createTree(right_objects, manager);
@@ -170,8 +171,6 @@ BvhNode::BvhNode(const std::vector<HitablePtr> &_objects, int start, int end, Bv
     m_box = AABB::surroundingBox(box_left, box_right);
 }
 
-
-
 bool BvhNode::boundingBox(AABB &bounding_box) const
 {
     bounding_box = m_box;
@@ -221,9 +220,9 @@ BvhNode *BvhManager::allocate_node()
     m_nodes += sizeof(BvhNode);
     if (m_nodes > m_nodes_end)
     {
-        int page_size = getpagesize();
+        const int page_size = 0x5000;
 
-        m_nodes = static_cast<uint8_t *>(mmap(m_nodes_end, page_size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
+        m_nodes = static_cast<uint8_t *>(mmap(m_nodes_end, 0x5000, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
         m_nodes_end = m_nodes + page_size;
 
         if (reinterpret_cast<long>(m_nodes) == -1)
@@ -243,7 +242,7 @@ BvhManager::BvhManager(const HitableList &list, int width, int height, int sampl
     m_cache = std::vector<std::vector<HitCacheRecord>>(width, std::vector<HitCacheRecord>(height, HitCacheRecord()));
 
     m_cache_cutoff_sample = static_cast<int>(static_cast<double>(samples_per_pixel) * FIRST_HIT_CACHE_FRAC);
-    
+
 #if BVH_SAH
     m_top = BvhNode::createTree(list.objects(), *this);
 #else
