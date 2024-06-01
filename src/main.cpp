@@ -40,13 +40,17 @@ void loadPreset(Renderer &renderer, std::string preset_name)
     if (preset_name == "suzanne")
         return setupGLTFBenchmarkScene(renderer, "benchmarking/suzanne_on_table_hr.glb");
     if (preset_name == "suzanne_big")
-        return setupGLTFBenchmarkScene(renderer, "benchmarking/suzanne_on_table_hr.glb", 1920, 9.0/16.0, 500);
+        return setupGLTFBenchmarkScene(renderer, "benchmarking/suzanne_on_table_hr.glb", 1920, 9.0/16.0, 800);
     if (preset_name == "suzanne_fast")
         return setupGLTFBenchmarkScene(renderer, "benchmarking/suzanne_on_table_hr.glb", 500);
     if (preset_name == "stanford_dragon")
         return setupGLTFBenchmarkScene(renderer, "benchmarking/stanford-dragon.glb", 1200, 9.0/16.0, 500);
     if (preset_name == "stanford_dragon_glass")
         return setupGLTFBenchmarkScene(renderer, "benchmarking/stanford-dragon-glass.glb", 800, 9.0/16.0, 500);
+    if (preset_name == "stanford_dragon_glass_fast")
+        return setupGLTFBenchmarkScene(renderer, "benchmarking/stanford-dragon-glass.glb", 600, 9.0/16.0, 400);
+    if (preset_name == "stanford_dragon_circle")
+        return setupGLTFBenchmarkScene(renderer, "benchmarking/stanford-dragon-circle.glb", 1920, 9.0/16.0, 500);
 
     ERROR("Unknown preset " << preset_name);
     exit(1);
