@@ -22,11 +22,11 @@ set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -Wall -Werror -fno-omit-frame-poin
 set(SOURCES ${SOURCES} "./custom_config.h")
 
 # Enable debugging
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 
 # Enable optimizations
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 
 # Enable address sanitizer
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
