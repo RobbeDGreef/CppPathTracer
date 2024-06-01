@@ -8,6 +8,11 @@ test/
 *.ppm
 *.jpg
 
+out.bmp
+out.folded
+out.perf-folded
+out.png
+
 test*
 raytracer*
 perf*
@@ -16,7 +21,11 @@ perf*
 shaders
 tmp
 
-benchmarking/*
-!benchmarking/benchmark-campaign
+benchmarking/*.blend*
+benchmarking/
+
+benchmarking/classroom
+benchmarking/test*
+benchmarking/presentation
 benchmarking/benchmark-campaign/results
 benchmarking/benchmark-campaign/venv
