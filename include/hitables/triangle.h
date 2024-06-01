@@ -7,7 +7,7 @@ class Triangle : public Hitable
 private:
     Point3 m_points[3];
     std::shared_ptr<Material> m_mat;
-    const bool m_doublesided = false;
+    const bool m_doublesided = true;
 
 protected:
     virtual std::shared_ptr<Material> material() const { return m_mat; }
