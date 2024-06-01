@@ -123,7 +123,8 @@ std::shared_ptr<Material> GLTF::parseMaterial(json file, int mat_idx, bool &is_e
             is_emissive = true;
         }
 
-        if (extensions.contains("KHR_materials_transmission")) {
+        if (extensions.contains("KHR_materials_transmission"))
+        {
             extensions["KHR_materials_transmission"]["transmissionFactor"].get_to(transmission);
         }
     }
@@ -158,98 +159,100 @@ void GLTF::parseMeshNode(Scene &scene, json &node, json &file, char *bin_data)
 
     // The primitives object contains the positions of all
     // the vertices as well as texture coordinates etc.
-    json primitives = mesh["primitives"][0];
-    int positions_accessor_idx;
-    int indices_accessor_idx;
-    int material_idx;
-
-    // All values in the primitives json object are indices into the accessor array
-    primitives["attributes"]["POSITION"].get_to(positions_accessor_idx);
-    primitives["indices"].get_to(indices_accessor_idx);
-
-    if (!primitives.contains("material"))
+    for (const auto &primitives : mesh["primitives"])
     {
-        ERROR("GLTF contains an object without a material applied to it");
-        exit(1);
-    }
-    primitives["material"].get_to(material_idx);
+        int positions_accessor_idx;
+        int indices_accessor_idx;
+        int material_idx;
 
-    // All data from accessors is stored in the binary part of this file.
-    // It is described by bufferviews which have their types etc.
-    json pos_accessor = file["accessors"][positions_accessor_idx];
-    json ind_accessor = file["accessors"][indices_accessor_idx];
+        // All values in the primitives json object are indices into the accessor array
+        primitives["attributes"]["POSITION"].get_to(positions_accessor_idx);
+        primitives["indices"].get_to(indices_accessor_idx);
 
-    // Handle the position accessor, this describes where the vertices of the mesh
-    // are in 3d space (I think).
-    size_t positions_count;
-    int bufferview_idx;
-    int component_type;
-    std::string type;
-    pos_accessor["componentType"].get_to(component_type);
-    pos_accessor["bufferView"].get_to(bufferview_idx);
-    pos_accessor["count"].get_to(positions_count);
-    pos_accessor["type"].get_to(type);
-
-    assert(component_type == GLTF_ACCESSOR_COMPTYPE_FLOAT);
-    assert(type == "VEC3");
-
-    GLTFVec3<float> *positions = static_cast<GLTFVec3<float> *>(getBufferviewData(file, bin_data, bufferview_idx));
-
-    // Now use the indices to create triangles and add them to the hitable list
-
-    size_t indices_count;
-    ind_accessor["bufferView"].get_to(bufferview_idx);
-    ind_accessor["count"].get_to(indices_count);
-    ind_accessor["type"].get_to(type);
-    ind_accessor["componentType"].get_to(component_type);
-
-    assert(component_type == GLTF_ACCESSOR_COMPTYPE_USHORT || component_type == GLTF_ACCESSOR_COMPTYPE_UINT);
-    assert(type == "SCALAR");
-
-    uint32_t *indices = new uint32_t[indices_count];
-
-    if (component_type == GLTF_ACCESSOR_COMPTYPE_USHORT)
-    {
-        uint16_t *temp = static_cast<uint16_t *>(getBufferviewData(file, bin_data, bufferview_idx));
-
-        for (size_t i = 0; i < indices_count; i++)
+        if (!primitives.contains("material"))
         {
-            indices[i] = temp[i];
+            ERROR("GLTF contains an object without a material applied to it");
+            exit(1);
         }
+        primitives["material"].get_to(material_idx);
+
+        // All data from accessors is stored in the binary part of this file.
+        // It is described by bufferviews which have their types etc.
+        json pos_accessor = file["accessors"][positions_accessor_idx];
+        json ind_accessor = file["accessors"][indices_accessor_idx];
+
+        // Handle the position accessor, this describes where the vertices of the mesh
+        // are in 3d space (I think).
+        size_t positions_count;
+        int bufferview_idx;
+        int component_type;
+        std::string type;
+        pos_accessor["componentType"].get_to(component_type);
+        pos_accessor["bufferView"].get_to(bufferview_idx);
+        pos_accessor["count"].get_to(positions_count);
+        pos_accessor["type"].get_to(type);
+
+        assert(component_type == GLTF_ACCESSOR_COMPTYPE_FLOAT);
+        assert(type == "VEC3");
+
+        GLTFVec3<float> *positions = static_cast<GLTFVec3<float> *>(getBufferviewData(file, bin_data, bufferview_idx));
+
+        // Now use the indices to create triangles and add them to the hitable list
+
+        size_t indices_count;
+        ind_accessor["bufferView"].get_to(bufferview_idx);
+        ind_accessor["count"].get_to(indices_count);
+        ind_accessor["type"].get_to(type);
+        ind_accessor["componentType"].get_to(component_type);
+
+        assert(component_type == GLTF_ACCESSOR_COMPTYPE_USHORT || component_type == GLTF_ACCESSOR_COMPTYPE_UINT);
+        assert(type == "SCALAR");
+
+        uint32_t *indices = new uint32_t[indices_count];
+
+        if (component_type == GLTF_ACCESSOR_COMPTYPE_USHORT)
+        {
+            uint16_t *temp = static_cast<uint16_t *>(getBufferviewData(file, bin_data, bufferview_idx));
+
+            for (size_t i = 0; i < indices_count; i++)
+            {
+                indices[i] = temp[i];
+            }
+        }
+        else
+        {
+            memcpy(indices, getBufferviewData(file, bin_data, bufferview_idx), sizeof(uint32_t) * indices_count);
+        }
+
+        bool is_emissive = false;
+        auto mat = parseMaterial(file, material_idx, is_emissive);
+
+        auto list = std::make_shared<HitableList>();
+        for (size_t i = 0; i < indices_count; i += 3)
+        {
+
+            auto triangle = new Triangle(
+                positions[indices[i + 0]].toPoint3() * GLTF_UNIT_TO_RT_UNIT,
+                positions[indices[i + 1]].toPoint3() * GLTF_UNIT_TO_RT_UNIT,
+                positions[indices[i + 2]].toPoint3() * GLTF_UNIT_TO_RT_UNIT,
+                mat);
+
+            list->add(triangle);
+        }
+
+        // If this material is emissive, it should be added to the lights
+        scene.getHitableList().add(list);
+
+        if (is_emissive)
+        {
+            scene.getLightList().push_back(list);
+        }
+
+        delete[] indices;
     }
-    else
-    {
-        memcpy(indices, getBufferviewData(file, bin_data, bufferview_idx), sizeof(uint32_t) * indices_count);
-    }
-
-    bool is_emissive = false;
-    auto mat = parseMaterial(file, material_idx, is_emissive);
-
-    auto list = std::make_shared<HitableList>();
-    for (size_t i = 0; i < indices_count; i += 3)
-    {
-
-        auto triangle = new Triangle(
-            positions[indices[i + 0]].toPoint3() * GLTF_UNIT_TO_RT_UNIT,
-            positions[indices[i + 1]].toPoint3() * GLTF_UNIT_TO_RT_UNIT,
-            positions[indices[i + 2]].toPoint3() * GLTF_UNIT_TO_RT_UNIT,
-            mat);
-
-        list->add(triangle);
-    }
-
-    // If this material is emissive, it should be added to the lights
-    scene.getHitableList().add(list);
-
-    if (is_emissive)
-    {
-        scene.getLightList().push_back(list);
-    }
-
-    delete[] indices;
 }
 
-void GLTF::read(Scene& scene)
+void GLTF::read(Scene &scene)
 {
     GLTFHeader header;
     GLTFChunk chunk;
