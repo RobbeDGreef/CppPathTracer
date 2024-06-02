@@ -23,7 +23,9 @@ BUILD_VARIABLES = [
     "use_slim_bvh_nodes",
     "triangle_intersection_algo",
     "work_square_size",
-    "aabb_hit_implementation"
+    "aabb_hit_implementation",
+    "bvh_first_hit_caching",
+    "bvh_sah"
 ]
 RUN_VARIABLES = ["nb_threads", "preset"]
 
@@ -244,13 +246,14 @@ def main():
 
     variables = {
         "nb_threads": [16],
-        "preset": ["suzanne"],
-        "threading_implementation": [3],
+        "preset": ["suzanne_fast"],
+        "threading_implementation": [2],
         "use_color_buffer_per_thread": [0],
-        "use_slim_bvh_nodes": [0],
         "triangle_intersection_algo": [1],
         "work_square_size": [1],
         "aabb_hit_implementation": [3],
+        "bvh_first_hit_caching": [0, 1],
+        "bvh_sah": [0, 1],
     }
 
     # This is just as a safety to make sure the variables specified
@@ -267,7 +270,7 @@ def main():
     campaign = create_campaign(
         variables=variables,
         copy_src_to_build=copy_src_to_build,
-        nb_runs=5,
+        nb_runs=4,
         source_dir=source_dir,
         bench_src_dir=bench_src_dir,
         platform=platform,
