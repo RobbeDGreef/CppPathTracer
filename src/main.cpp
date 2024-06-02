@@ -42,7 +42,7 @@ void loadPreset(Renderer &renderer, std::string preset_name)
     if (preset_name == "suzanne_big")
         return setupGLTFBenchmarkScene(renderer, "benchmarking/suzanne_on_table_hr.glb", 1920, 9.0/16.0, 800);
     if (preset_name == "suzanne_fast")
-        return setupGLTFBenchmarkScene(renderer, "benchmarking/suzanne_on_table_hr.glb", 500);
+        return setupGLTFBenchmarkScene(renderer, "benchmarking/suzanne_on_table_hr.glb", 800, 9.0/16.0, 400);
     if (preset_name == "stanford_dragon")
         return setupGLTFBenchmarkScene(renderer, "benchmarking/stanford-dragon.glb", 1200, 9.0/16.0, 500);
     if (preset_name == "stanford_dragon_glass")
