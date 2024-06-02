@@ -36,7 +36,7 @@ private:
     double m_mix;
 
 public:
-    MixBRDF(BRDF &brdf1, BRDF &brdf2, double mix)
+    MixBRDF(double mix, BRDF &brdf1, BRDF &brdf2)
         : m_brdf1(brdf1), m_brdf2(brdf2), m_mix(mix)
     {
     }
@@ -207,7 +207,7 @@ public:
         double transmission, const std::shared_ptr<Texture> &emission, double emission_strength) : m_baseColor(color), m_roughness(roughness), m_metallic(metallic), m_transmission(transmission),
                                                                                                    m_emission(emission), m_emission_strength(emission_strength), m_diffuse_brdf(color),
                                                                                                    m_specular_brdf(roughness), m_dielectric_brdf(1 - m_roughness, m_diffuse_brdf, m_specular_brdf),
-                                                                                                   m_metallic_brdf(roughness, m_baseColor), m_brdf(m_dielectric_brdf, m_metallic_brdf, metallic) {}
+                                                                                                   m_metallic_brdf(roughness, m_baseColor), m_brdf(metallic, m_dielectric_brdf, m_metallic_brdf) {}
     bool scatter(const Ray &r, const HitRecord &rec, ScatterRecord &srec) const override;
     bool emitted(double u, double v, const Point3 &p, Color &emission) const override;
     Color eval(const Ray &in, const HitRecord &rec, const ScatterRecord &srec) const override;
