@@ -47,7 +47,7 @@
 #endif
 
 #ifndef BVH_FIRST_HIT_CACHING
-#define BVH_FIRST_HIT_CACHING FALSE
+#define BVH_FIRST_HIT_CACHING TRUE
 #endif
 
 #ifndef BVH_SAH
