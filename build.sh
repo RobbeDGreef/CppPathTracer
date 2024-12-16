@@ -5,7 +5,6 @@ if [ ! -d "./build" ]; then
 fi
 
 cd build
-cmake ..
-make
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j $(nproc)
 mv raytracer ../
-
